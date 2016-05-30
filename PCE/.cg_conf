@@ -1,0 +1,1 @@
+{"id":"haskell","ext":"hs","version":"Glorious Glasgow, v7.8.4","compile":"ghc -O2 --make *.hs -o main -threaded -rtsopts","execute":"main","preview":"","command":"","file":"/home/cg/src/samples/main.hs","url":"compile_haskell_online.php","mode":"haskell"}
