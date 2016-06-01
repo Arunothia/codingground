@@ -7,7 +7,16 @@ import Data.Function
 
 data PAValue = PAFalse | PATrue | PAQuest
 
--- Assign(l) Function that defines a partial assignment for a function.
+-- isQues and isFalse function do trivially what their name suggests
+
+isQues :: PAValue -> Bool
+isQues v = if (v == PAQuest) then True else False
+
+isFalse :: PAValue -> Bool
+isFalse v = if (v == PAFalse) then True else False
+
+
+-- assign(l) Function defines a partial assignment when a literal is specified.
 -- It takes an integer (negative for negated variables) and returns a partial assignment.
 -- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals false.
  
@@ -17,6 +26,20 @@ assign l
 	| (l>0) = \x -> if (x == l) then PATrue else \x -> PAQuest
 	| otherwise = \x -> if (x == l) then PAFalse else PAQuest
 
+-- paMeet Function defines the 'meet' operator for combining two partial assignments.
+-- If the two partial assignments lead to a contradiction, then we return Nothing (denoting contradiction).
+-- Otherwise we return the unification of the two partial assignments.
+
+paMeet :: (Int -> PAValue) -> (Int -> PAValue) -> Maybe (Int -> PAValue)
+paMeet = Nothing -- TO BE WRITTEN
+
+-- up(c) Function defines a unit propagation function that takes a partial assignment to another partial assignment.
+-- It takes a list of integers (that represents a clause) as input.
+
+up :: [Int] -> ((Int -> PAValue) -> (Int -> PAValue))
+up c = \p -> if ((length(Prelude.filter isQues (map p c)) == 1) && (length(Prelude.filter isFalse (map p c)) == length(c) - 1)) 
+	     	then paMeet p assign(head Prelude.filter isQues (map p c))
+		else p
 
 -- pce is the function that will function as our Algorithm-1
 -- PCE - stands for Propagation Complete Encodings
