@@ -1,5 +1,9 @@
 In this project we are implementing the Algorithm-1 given in the paper - "Automatic Generation of Propagation Complete SAT Encodings".
 
+Compile using the following command
+
+$ ghc -O2 --make *.hs -o main -threaded -rtsopts
+
 Team
 
 Arunothia Marappan
