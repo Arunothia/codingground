@@ -41,6 +41,12 @@ up c = \p -> if ((length(Prelude.filter isQues (map p c)) == 1) && (length(Prelu
 	     	then paMeet p assign(head Prelude.filter isQues (map p c))
 		else p
 
+-- gfpUP Function - Greatest Fixed Point of applying up(c) for each clause in the encoding.
+-- It takes a set of clauses (List of list of integers) and a partial assignment as the input.
+-- It outputs the GFP of unit propagation as mentioned in the paper
+
+gfpUP :: [[Int]] -> (Int -> PAValue) -> (Int -> PAValue)
+
 -- pce is the function that will function as our Algorithm-1
 -- PCE - stands for Propagation Complete Encodings
 
