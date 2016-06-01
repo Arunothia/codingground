@@ -1,6 +1,22 @@
 module PCE where
 import AI.Surely
 import Data.Heap
+import Data.Function
+
+-- Data Type PAValue helps to define our partial assignment. It can be (True|False|Question), exactly the range of partial assignments.
+
+data PAValue = PAFalse | PATrue | PAQuest
+
+-- Assign(l) Function that defines a partial assignment for a function.
+-- It takes an integer (negative for negated variables) and returns a partial assignment.
+-- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals false.
+ 
+assign :: Int -> (Int -> PAValue) 
+assign 0 = \x->True
+assign l
+	| (l>0) = \x -> if (x == l) then PATrue else \x -> PAQuest
+	| otherwise = \x -> if (x == l) then PAFalse else PAQuest
+
 
 -- pce is the function that will function as our Algorithm-1
 -- PCE - stands for Propagation Complete Encodings
