@@ -17,7 +17,7 @@ import Data.List
 -- The value 'contradiction' helps in identifying contradictions in the assignment of that variable.
 
 data PAValue = PAFalse | PATrue | PAQuest | PAContra
-		deriving (Eq, Show)
+		deriving (Eq, Read, Show)
 
 -----------------------------------------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ up n c (Just p)
 			assignPAValueToL l
 				| (l > 0) = p !! (l-1)
 				| (l == 0) = PAContra
-				| otherwise = invertPAValue (p !! (l-1))
+				| otherwise = invertPAValue (p !! (abs(l)-1))
 			invertPAValue v
 				| (v == PAFalse) = PATrue
 				| (v == PATrue) = PAFalse
