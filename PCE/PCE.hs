@@ -33,21 +33,22 @@ paTop n = Just (replicate n PAQuest)
 -- assign Function defines a partial assignment when a literal is specified.
 -- Its first integer input stands for 'n' - that denotes the vocabulary.
 -- It takes an integer (negative for negated variables) and returns a partial assignment.
--- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals false.
+-- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals a contradiction.
  
 assign :: Int -> Int -> Maybe [PAValue]
-assign n 0 = Just (replicate n PAFalse)
+assign n 0 = Just (replicate n PAContra)
 assign 0 _ = Nothing
 assign n l
 	| (l > 0) = Just(init(first) ++ [PATrue] ++ second) 
 	| otherwise = Just(init(first) ++ [PAFalse] ++ second)
 	where  (first,second) = Data.List.splitAt (abs(l)) (fromJust(paTop n))
+
+-----------------------------------------------------------------------------------------------------------
 		  
 -- paMeet Function defines the 'meet' operator for combining two partial assignments.
 -- If the two partial assignments lead to a contradiction, then we return Nothing (denoting contradiction).
 -- Otherwise we return the unification of the two partial assignments.
 
-------------------------------------------------------------------------------------------------------------
 
 paMeet :: Maybe [PAValue] -> Maybe [PAValue] -> Maybe [PAValue]
 paMeet _ Nothing = Nothing
@@ -60,12 +61,30 @@ paMeet (Just p) (Just q) = if length(Prelude.filter (== PAContra) unifiedPA) > 0
 		| (b == PAQuest) = a
 		| otherwise = PAContra
 
+-----------------------------------------------------------------------------------------------------------
+
 -- up(c) Function defines a unit propagation function that takes a partial assignment to another partial assignment.
 -- It takes a list of integers (that represents a clause) as input.
+-- It takes an integer 'n' - that is the vocabulary value.
 
-up :: [Int] -> Maybe [PAValue] -> Maybe [PAValue]
-up _ Nothing  = Nothing
-up c (Just p) = Nothing -- To be completed
+up :: Int -> [Int] -> Maybe [PAValue] -> Maybe [PAValue]
+up _ _ Nothing  = Nothing
+up n c (Just p)
+	| (((length c) -1 ==paFalseCount)&&(paQuestCount ==1)) = paMeet (assign n (c!!(fromJust(findIndex (==PAQuest) paValueListOfC)))) (Just p)
+	| otherwise 					       = (Just p)
+		where	paQuestCount = length (Prelude.filter (==PAQuest) paValueListOfC)
+			paFalseCount = length (Prelude.filter (==PAFalse) paValueListOfC)
+			paValueListOfC = map assignPAValueToL c
+			assignPAValueToL l
+				| (l > 0) = p !! (l-1)
+				| (l == 0) = PAContra
+				| otherwise = invertPAValue (p !! (l-1))
+			invertPAValue v
+				| (v == PAFalse) = PATrue
+				| (v == PATrue) = PAFalse
+				| otherwise = v
+
+-----------------------------------------------------------------------------------------------------------
 
 -- gfpUP Function - Greatest Fixed Point of applying up(c) for each clause in the encoding.
 -- It takes a set of clauses (List of list of integers) and a partial assignment as the input.
