@@ -8,6 +8,8 @@ import AI.Surely
 import Data.Heap 
 -- For fromJust Function :: Maybe a -> a
 import Data.Maybe
+-- For Function Fix
+import Data.Function
 -- For find Function for List manipulation
 import Data.List
 
@@ -87,12 +89,16 @@ up n c (Just p)
 -----------------------------------------------------------------------------------------------------------
 
 -- gfpUP Function - Greatest Fixed Point of applying up(c) for each clause in the encoding.
--- It takes a set of clauses (List of list of integers) and a partial assignment as the input.
+-- It takes the vocabulary value 'n', a set of clauses (List of list of integers) and a partial assignment as the input.
 -- It outputs the GFP of unit propagation as mentioned in the paper
 
-gfpUP :: [[Int]] -> Maybe [PAValue] -> Maybe [PAValue]
-gfpUP _ Nothing     = Nothing
-gfpUP setC (Just p) = Nothing -- To be completed.
+gfpUP :: Int -> [[Int]] -> Maybe [PAValue] -> Maybe [PAValue]
+gfpUP _ _ Nothing     = Nothing
+gfpUP n setC (Just p) = fix (\q -> paMeet (Just p) (bigPAMeet setC q))
+	where bigPAMeet [] q = q
+	      bigPAMeet (c:rest) q = bigPAMeet rest (up n c q)  
+
+-----------------------------------------------------------------------------------------------------------
 
 -- pce is the function that will function as our Algorithm-1
 -- PCE - stands for Propagation Complete Encodings
@@ -114,3 +120,4 @@ gfpUP setC (Just p) = Nothing -- To be completed.
 pce :: Int -> [[Int]] -> [[Int]] -> [[Int]]
 pce n eIni eRef = eIni
 
+-----------------------------------------------------------------------------------------------------------
