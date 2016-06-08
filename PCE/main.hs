@@ -2,6 +2,7 @@ module Main where
 import AI.Surely
 import PCE
 import Data.List.Split
+import Data.Heap
 
 readInt :: IO [Int]
 readInt = fmap (Prelude.map read. Prelude.words) getLine
@@ -50,4 +51,13 @@ main = do
 			print $ gfpUP n setC (PA (Just p))
 	else do
 		putStrLn "*** Computing Propagation Complete Encodings (PCE) ***"
-		return()
+		putStrLn "Enter E_0 (Each clause is space seperated literals) and the clauses are seperated by ','"
+                inputE <- getLine
+                let tmp1 = splitOneOf "," inputE
+                let e = (Prelude.map ((map read).words) tmp1)
+		putStrLn "Enter E_ref (Each clause is space seperated literals) and the clauses are seperated by ','"
+                inputERef <- getLine
+                let tmp2 = splitOneOf "," inputERef
+                let eRef = (Prelude.map ((map read).words) tmp2)
+		let pq = singleton (paTop n) :: MinHeap PA
+		print $ pce n e eRef pq
