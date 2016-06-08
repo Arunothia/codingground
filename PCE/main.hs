@@ -37,7 +37,7 @@ main = do
 			c <- readInt
 			putStrLn "Enter a partial assignment ('n' Space seperated PAValues)" 
 			p <- readPAValue
-			print $ up n c (Just p)
+			print $ up n c (PA (Just p))
 	else if debug == 5
 		then do
 			putStrLn "*** DEBUG 'gfpUP' ***"
@@ -47,7 +47,7 @@ main = do
     			let setC = (Prelude.map ((map read).words) tmp)
 			putStrLn "Enter a partial assignment ('n' Space seperated PAValues)"     
                         p <- readPAValue
-			print $ gfpUP n setC (Just p)
+			print $ gfpUP n setC (PA (Just p))
 	else do
 		putStrLn "*** Computing Propagation Complete Encodings (PCE) ***"
 		return()

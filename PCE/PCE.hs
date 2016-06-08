@@ -1,17 +1,23 @@
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 -- Written by M.Arunothia as a part of research internship under Prof.Harald, University of Melbourne.
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 module PCE where
 -- For SAT Solver
 import AI.Surely 
 -- For Priority Queue 
 import Data.Heap 
--- For fromJust Function :: Maybe a -> a
-import Data.Maybe
 -- For find Function for List manipulation
 import Data.List
 
 -----------------------------------------------------------------------------------------------------------
+
+-- Definition Taken from Data.Maybe
+
+fromJust          :: Maybe a -> a
+fromJust Nothing  = error "Error: fromJust detected Nothing" 
+fromJust (Just x) = x
+
+------------------------------------------------------------------------------------------------------------
 
 -- Data Type PAValue helps to define our partial assignment. It can be (True|False|Question|Contradiction).
 -- The value 'contradiction' helps in identifying contradictions in the assignment of that variable.
@@ -19,14 +25,29 @@ import Data.List
 data PAValue = PAFalse | PATrue | PAQuest | PAContra
 		deriving (Eq, Read, Show)
 
------------------------------------------------------------------------------------------------------------
+-- PA - The Type of Partial Assignment we will be dealing with
+
+newtype PA = PA (Maybe([PAValue]))
+		deriving (Eq, Read, Show)
+
+unPA :: PA -> Maybe([PAValue])
+unPA (PA v) = v
+
+-- The following defines an order on Partial Assignments (The more undefined, higher the value) 
+
+instance Ord PA where
+  _ `compare` (PA Nothing) = 1 `compare` 0
+  (PA Nothing) `compare` _ = 0 `compare` 1
+  PA (Just p) `compare` PA (Just q) = length(Prelude.filter (== PAQuest) p) `compare` length(Prelude.filter (== PAQuest) q)
+
+------------------------------------------------------------------------------------------------------------
 
 -- paTop is the fully unidentified partial assignment.
 -- Partial Assignment in this code is defined by the data type Maybe [PAValue]
 
-paTop :: Int -> Maybe ([PAValue])
-paTop 0 = Nothing
-paTop n = Just (replicate n PAQuest)
+paTop :: Int -> PA
+paTop 0 = PA Nothing
+paTop n = PA $Just (replicate n PAQuest)
 
 -----------------------------------------------------------------------------------------------------------
 
@@ -35,13 +56,13 @@ paTop n = Just (replicate n PAQuest)
 -- It takes an integer (negative for negated variables) and returns a partial assignment.
 -- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals a contradiction.
  
-assign :: Int -> Int -> Maybe [PAValue]
-assign n 0 = Just (replicate n PAContra)
-assign 0 _ = Nothing
+assign :: Int -> Int -> PA
+assign n 0 = PA $Just (replicate n PAContra)
+assign 0 _ = PA Nothing
 assign n l
-	| (l > 0) = Just(init(first) ++ [PATrue] ++ second) 
-	| otherwise = Just(init(first) ++ [PAFalse] ++ second)
-	where  (first,second) = Data.List.splitAt (abs(l)) (fromJust(paTop n))
+	| (l > 0) = PA $Just(init(first) ++ [PATrue] ++ second) 
+	| otherwise = PA $Just(init(first) ++ [PAFalse] ++ second)
+	where  (first,second) = Data.List.splitAt (abs(l)) (fromJust $unPA (paTop n))
 
 -----------------------------------------------------------------------------------------------------------
 		  
@@ -50,10 +71,10 @@ assign n l
 -- Otherwise we return the unification of the two partial assignments.
 
 
-paMeet :: Maybe [PAValue] -> Maybe [PAValue] -> Maybe [PAValue]
-paMeet _ Nothing = Nothing
-paMeet Nothing _ = Nothing
-paMeet (Just p) (Just q) = if length(Prelude.filter (== PAContra) unifiedPA) > 0 then Nothing else Just unifiedPA  
+paMeet :: PA -> PA -> PA
+paMeet _ (PA Nothing) = PA Nothing
+paMeet (PA Nothing) _ = PA Nothing
+paMeet (PA (Just p)) (PA (Just q)) = if length(Prelude.filter (== PAContra) unifiedPA) > 0 then PA Nothing else PA $Just unifiedPA  
 	where unifiedPA = zipWith unifyPA p q
 	      unifyPA a b
 		| (a == b) = a
@@ -67,11 +88,12 @@ paMeet (Just p) (Just q) = if length(Prelude.filter (== PAContra) unifiedPA) > 0
 -- It takes a list of integers (that represents a clause) as input.
 -- It takes an integer 'n' - that is the vocabulary value.
 
-up :: Int -> [Int] -> Maybe [PAValue] -> Maybe [PAValue]
-up _ _ Nothing  = Nothing
-up n c (Just p)
-	| (((length c) -1 ==paFalseCount)&&(paQuestCount ==1)) = paMeet (assign n (c!!(fromJust(findIndex (==PAQuest) paValueListOfC)))) (Just p)
-	| otherwise 					       = (Just p)
+up :: Int -> [Int] -> PA -> PA
+up _ _ (PA Nothing)  = (PA Nothing)
+up n c (PA (Just p))
+	| (((length c) -1 ==paFalseCount)&&(paQuestCount ==1)) 
+						= paMeet (assign n (c!!(fromJust(findIndex (==PAQuest) paValueListOfC)))) (PA (Just p))
+	| otherwise 					       = (PA (Just p))
 		where	paQuestCount = length (Prelude.filter (==PAQuest) paValueListOfC)
 			paFalseCount = length (Prelude.filter (==PAFalse) paValueListOfC)
 			paValueListOfC = map assignPAValueToL c
@@ -90,7 +112,7 @@ up n c (Just p)
 -- It takes the vocabulary value 'n', a set of clauses (List of list of integers) and a partial assignment as the input.
 -- It outputs the GFP of unit propagation as mentioned in the paper.
 
-gfpUP :: Int -> [[Int]] -> Maybe [PAValue] -> Maybe [PAValue]
+gfpUP :: Int -> [[Int]] -> PA -> PA
 gfpUP n setC p = greatestFP p
 	where greatestFP q
 		| (q == (bigPAMeet setC q)) = q
@@ -118,9 +140,10 @@ gfpUP n setC p = greatestFP p
 -- (3) Postive Integer i represents the literal X_i and negative integer i represents the literal !X_i. 
 -- (4) Integer 0 is not included in the representation.
 
-pce :: Int -> [[Int]] -> [[Int]] -> MinHeap (Maybe[PAValue]) -> [[Int]]
+pce :: Int -> [[Int]] -> [[Int]] -> MinHeap PA -> [[Int]]
 pce n e eRef pq
 	| (isEmpty pq) = e
-	| otherwise = e -- To be Completed
+	| otherwise = e
+		where pa = fromJust(viewHead pq)
 
 -----------------------------------------------------------------------------------------------------------
