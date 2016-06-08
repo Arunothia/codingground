@@ -8,8 +8,6 @@ import AI.Surely
 import Data.Heap 
 -- For fromJust Function :: Maybe a -> a
 import Data.Maybe
--- For Function Fix
-import Data.Function
 -- For find Function for List manipulation
 import Data.List
 
@@ -90,12 +88,14 @@ up n c (Just p)
 
 -- gfpUP Function - Greatest Fixed Point of applying up(c) for each clause in the encoding.
 -- It takes the vocabulary value 'n', a set of clauses (List of list of integers) and a partial assignment as the input.
--- It outputs the GFP of unit propagation as mentioned in the paper
+-- It outputs the GFP of unit propagation as mentioned in the paper.
 
 gfpUP :: Int -> [[Int]] -> Maybe [PAValue] -> Maybe [PAValue]
-gfpUP _ _ Nothing     = Nothing
-gfpUP n setC (Just p) = fix (\q -> paMeet (Just p) (bigPAMeet setC q))
-	where bigPAMeet [] q = q
+gfpUP n setC p = greatestFP p
+	where greatestFP q
+		| (q == (bigPAMeet setC q)) = q
+		| otherwise = greatestFP (bigPAMeet setC q) 
+	      bigPAMeet [] q = q
 	      bigPAMeet (c:rest) q = bigPAMeet rest (up n c q)  
 
 -----------------------------------------------------------------------------------------------------------
