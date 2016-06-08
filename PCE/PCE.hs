@@ -105,8 +105,9 @@ gfpUP n setC p = greatestFP p
 
 -- Its arguments are
 -- (1) An integer 'n', implying the vocabulary or variable set is X_1 to X_n
--- (2) A list of list of integers that will represent the CNF of E_0 (which is empty mostly)
+-- (2) A list of list of integers that will represent the CNF of E that is being computed (It will be E_0 at the start)
 -- (3) A list of list of integers that will represent the CNF of E_ref (which is the CNF for which equisatisfiable formula is to be found)
+-- (4) A minHeap (priority queue) that is required by the algorithm for looping.
 
 -- It returns 
 -- (1) List of list of Integers representing the encoding that is equisatisfiable to E_ref and is propagation complete.
@@ -117,7 +118,9 @@ gfpUP n setC p = greatestFP p
 -- (3) Postive Integer i represents the literal X_i and negative integer i represents the literal !X_i. 
 -- (4) Integer 0 is not included in the representation.
 
-pce :: Int -> [[Int]] -> [[Int]] -> [[Int]]
-pce n eIni eRef = eIni
+pce :: Int -> [[Int]] -> [[Int]] -> MinHeap (Maybe[PAValue]) -> [[Int]]
+pce n e eRef pq
+	| (isEmpty pq) = e
+	| otherwise = e -- To be Completed
 
 -----------------------------------------------------------------------------------------------------------
