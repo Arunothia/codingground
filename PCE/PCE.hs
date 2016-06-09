@@ -48,7 +48,7 @@ instance Ord PA where
 -- Partial Assignment in this code is defined by the data type Maybe [PAValue]
 
 paTop :: Int -> PA
-paTop 0 = PA Nothing
+paTop 0 = error "Empty Vocabulary"
 paTop n = PA $Just (replicate n PAQuest)
 
 -----------------------------------------------------------------------------------------------------------
@@ -62,6 +62,7 @@ assign :: Int -> Int -> PA
 assign n 0 = error "Literal value cannot be '0'"
 assign 0 _ = error "Empty Vocabulary"
 assign n l
+	| (abs(l) > n) = error "Invalid Literal"
 	| (l > 0) = PA $Just(init(first) ++ [PATrue] ++ second) 
 	| otherwise = PA $Just(init(first) ++ [PAFalse] ++ second)
 	where  (first,second) = Data.List.splitAt (abs(l)) (fromJust $unPA (paTop n))

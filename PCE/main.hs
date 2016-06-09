@@ -15,7 +15,7 @@ main = do
 	putStrLn "ANY OTHER NUMBER: PCE"
 	debugInput <- getLine
 	let debug = read debugInput :: Int
-	putStrLn "Enter value of Vocabulary 'n'"
+	putStrLn "Enter value of Vocabulary 'n' (Integer n > 0)"
 	nInput <- getLine
 	let n = read nInput :: Int
 	if debug == 1 then print $ PCE.paTop n
