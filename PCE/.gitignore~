@@ -1,6 +1,6 @@
 # ignore generated files,
 
-*.hi *.o main *~ main
+*.hi *.o main *~
 
 # except for files maintained by hand
 # !<file>
