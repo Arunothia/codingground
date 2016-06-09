@@ -31,4 +31,4 @@ In this project, we are implementing the Algorithm-1 given in the paper
 
 *Under Prof. Harald Sondergaard*
 
-###University of Melbourne
+*University of Melbourne*
