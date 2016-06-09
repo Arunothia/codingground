@@ -26,6 +26,9 @@ In this project, we are implementing the Algorithm-1 given in the paper
 
 
 ###Arunothia Marappan
+
 *Research Intern*
+
 *Under Prof. Harald Sondergaard*
+
 ###University of Melbourne
