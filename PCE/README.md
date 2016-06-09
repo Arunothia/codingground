@@ -1,4 +1,6 @@
-In this project we are implementing the Algorithm-1 given in the paper - "Automatic Generation of Propagation Complete SAT Encodings".
+In this project we are implementing the Algorithm-1 given in the paper 
+
+#Automatic Generation of Propagation Complete SAT Encodings"
 
 Packages Needed to be installed -
 
@@ -15,8 +17,9 @@ Run using the following command
 
     ./main
 
-Team
 
-Arunothia Marappan
+#Team
+
+#Arunothia Marappan
 Under guidance of - Prof. Harald
 University of Melbourne
