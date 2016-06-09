@@ -11,7 +11,8 @@ readPAValue :: IO [PAValue]
 readPAValue = fmap (Prelude.map read. Prelude.words) getLine
 
 main = do
-	putStrLn "Enter \n1: Debug paTop\n2: Debug assign\n3: Debug paMeet\n4: Debug up(Unit Propagation)\n5: Debug gfpUP\nANY OTHER NUMBER: PCE"
+	putStrLn "Enter \n1: Debug paTop\n2: Debug assign\n3: Debug paMeet\n4: Debug up(Unit Propagation)\n5: Debug gfpUP"
+	putStrLn "ANY OTHER NUMBER: PCE"
 	debugInput <- getLine
 	let debug = read debugInput :: Int
 	putStrLn "Enter value of Vocabulary 'n'"

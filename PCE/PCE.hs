@@ -10,19 +10,21 @@ import Data.Heap
 import Data.List
 
 -----------------------------------------------------------------------------------------------------------
+-- HELPER FUNCTIONS
 
--- Definition Taken from Data.Maybe
+-- fromJust Function
 
 fromJust          :: Maybe a -> a
 fromJust Nothing  = error "Error: fromJust detected Nothing" 
 fromJust (Just x) = x
 
+-- fromMaybe Function
+
 ------------------------------------------------------------------------------------------------------------
 
--- Data Type PAValue helps to define our partial assignment. It can be (True|False|Question|Contradiction).
--- The value 'contradiction' helps in identifying contradictions in the assignment of that variable.
+-- Data Type PAValue helps to define our partial assignment. It can be (True|False|Question).
 
-data PAValue = PAFalse | PATrue | PAQuest | PAContra
+data PAValue = PAFalse | PATrue | PAQuest
 		deriving (Eq, Read, Show)
 
 -- PA - The Type of Partial Assignment we will be dealing with
@@ -36,8 +38,8 @@ unPA (PA v) = v
 -- The following defines an order on Partial Assignments (The more undefined, higher the value) 
 
 instance Ord PA where
-  _ `compare` (PA Nothing) = 1 `compare` 0
-  (PA Nothing) `compare` _ = 0 `compare` 1
+  _ `compare` (PA Nothing) = GT
+  (PA Nothing) `compare` _ = LT
   PA (Just p) `compare` PA (Just q) = length(Prelude.filter (== PAQuest) p) `compare` length(Prelude.filter (== PAQuest) q)
 
 ------------------------------------------------------------------------------------------------------------
@@ -57,8 +59,8 @@ paTop n = PA $Just (replicate n PAQuest)
 -- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals a contradiction.
  
 assign :: Int -> Int -> PA
-assign n 0 = PA $Just (replicate n PAContra)
-assign 0 _ = PA Nothing
+assign n 0 = error "Literal value cannot be '0'"
+assign 0 _ = error "Empty Vocabulary"
 assign n l
 	| (l > 0) = PA $Just(init(first) ++ [PATrue] ++ second) 
 	| otherwise = PA $Just(init(first) ++ [PAFalse] ++ second)
@@ -74,13 +76,13 @@ assign n l
 paMeet :: PA -> PA -> PA
 paMeet _ (PA Nothing) = PA Nothing
 paMeet (PA Nothing) _ = PA Nothing
-paMeet (PA (Just p)) (PA (Just q)) = if length(Prelude.filter (== PAContra) unifiedPA) > 0 then PA Nothing else PA $Just unifiedPA  
+paMeet (PA (Just p)) (PA (Just q)) = PA $ sequence unifiedPA
 	where unifiedPA = zipWith unifyPA p q
 	      unifyPA a b
-		| (a == b) = a
-		| (a == PAQuest) = b
-		| (b == PAQuest) = a
-		| otherwise = PAContra
+		| (a == b) = (Just a)
+		| (a == PAQuest) = (Just b)
+		| (b == PAQuest) = (Just a)
+		| otherwise = Nothing
 
 -----------------------------------------------------------------------------------------------------------
 
@@ -99,7 +101,7 @@ up n c (PA (Just p))
 			paValueListOfC = map assignPAValueToL c
 			assignPAValueToL l
 				| (l > 0) = p !! (l-1)
-				| (l == 0) = PAContra
+				| (l == 0) = error "Literal Value cannot be '0'"
 				| otherwise = invertPAValue (p !! (abs(l)-1))
 			invertPAValue v
 				| (v == PAFalse) = PATrue
