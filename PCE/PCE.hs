@@ -18,8 +18,6 @@ fromJust          :: Maybe a -> a
 fromJust Nothing  = error "Error: fromJust detected Nothing" 
 fromJust (Just x) = x
 
--- fromMaybe Function
-
 ------------------------------------------------------------------------------------------------------------
 
 -- Data Type PAValue helps to define our partial assignment. It can be (True|False|Question).
