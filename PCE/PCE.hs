@@ -160,17 +160,17 @@ pce n e eRef pq
 	| otherwise = pce n eNew eRef pqNew
 		where 	pqNew = foldl' pushPQ empty paPrimeSatList		-- New Priority Queue after Loop.
 			eNew = Data.List.union e (map mus paPrimeUnSatList)	-- New E after Loop.
-			pushPQ queue p = Data.Heap.insert p queue		-- helper function
-			mus (PA Nothing) = error "paPrimeList had a contradicting assignment"
-			mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) [1..n])
+			pushPQ queue p = Data.Heap.insert p queue		-- MUS (Unsatisfiable Core - not minimal)
+			mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
+			mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]) )
 			(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
 			isSat p = isJust(AI.Surely.solve $applyPA p)
 			applyPA (PA Nothing) = error "paPrimeList had a contradicting assignment"
-			applyPA (PA (Just p))= [] -- To be completed    
+			applyPA (PA (Just p))= [] -- To be completed!!!!!
 			paPrimeList = map paPrime loopList 			-- The pa' list 
 			loopList = negEach $findIndices (==PAQuest) paE 	-- The literal set for the loop.
-			negEach xs = foldr negate [] xs  			-- helper function
-    			negate x y = x : -x : y 				-- helper function
+			negEach xs = foldr negate [] xs  	
+    			negate x y = x : -x : y 			
 			paPrime l = paMeet pa (assign n l) 			-- pa' evaluation  
 			paE = fromJust $ unPA $ gfpUP n e pa 			-- partial assignment returned from UP(E)(pa)
 			pa = fromJust(viewHead pq) 				-- pa <- PQ.pop()
