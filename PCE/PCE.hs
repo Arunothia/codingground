@@ -18,6 +18,12 @@ fromJust          :: Maybe a -> a
 fromJust Nothing  = error "Error: fromJust detected Nothing" 
 fromJust (Just x) = x
 
+-- isJust Function
+
+isJust 	:: Maybe a -> Bool
+isJust Nothing 	= False
+isJust (Just _) = True
+
 ------------------------------------------------------------------------------------------------------------
 
 -- Data Type PAValue helps to define our partial assignment. It can be (True|False|Question).
@@ -25,10 +31,17 @@ fromJust (Just x) = x
 data PAValue = PAFalse | PATrue | PAQuest
 		deriving (Eq, Read, Show)
 
+paValue :: PAValue -> Int
+paValue PAFalse = -1
+paValue PATrue 	= 1
+paValue PAQuest = 0
+
 -- PA - The Type of Partial Assignment we will be dealing with
 
 newtype PA = PA (Maybe([PAValue]))
 		deriving (Eq, Read, Show)
+
+-- To undo PA constructor use unPA Function
 
 unPA :: PA -> Maybe([PAValue])
 unPA (PA v) = v
@@ -144,7 +157,22 @@ gfpUP n setC p = greatestFP p
 pce :: Int -> [[Int]] -> [[Int]] -> MinHeap PA -> [[Int]]
 pce n e eRef pq
 	| (isEmpty pq) = e
-	| otherwise = e
-		where pa = fromJust(viewHead pq)
+	| otherwise = pce n eNew eRef pqNew
+		where 	pqNew = foldl' pushPQ empty paPrimeSatList		-- New Priority Queue after Loop.
+			eNew = Data.List.union e (map mus paPrimeUnSatList)	-- New E after Loop.
+			pushPQ queue p = Data.Heap.insert p queue		-- helper function
+			mus (PA Nothing) = error "paPrimeList had a contradicting assignment"
+			mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) [1..n])
+			(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
+			isSat p = isJust(AI.Surely.solve $applyPA p)
+			applyPA (PA Nothing) = error "paPrimeList had a contradicting assignment"
+			applyPA (PA (Just p))= [] -- To be completed    
+			paPrimeList = map paPrime loopList 			-- The pa' list 
+			loopList = negEach $findIndices (==PAQuest) paE 	-- The literal set for the loop.
+			negEach xs = foldr negate [] xs  			-- helper function
+    			negate x y = x : -x : y 				-- helper function
+			paPrime l = paMeet pa (assign n l) 			-- pa' evaluation  
+			paE = fromJust $ unPA $ gfpUP n e pa 			-- partial assignment returned from UP(E)(pa)
+			pa = fromJust(viewHead pq) 				-- pa <- PQ.pop()
 
 -----------------------------------------------------------------------------------------------------------
