@@ -4,7 +4,7 @@ import PCE
 import Data.List.Split
 import Data.Heap
 
-readInt :: IO [Int]
+readInt :: IO [Integer]
 readInt = fmap (Prelude.map read. Prelude.words) getLine
 
 readPAValue :: IO [PAValue]
@@ -14,17 +14,17 @@ main = do
 	putStrLn "Enter \n1: Debug paTop\n2: Debug assign\n3: Debug paMeet\n4: Debug up(Unit Propagation)\n5: Debug gfpUP"
 	putStrLn "ANY OTHER NUMBER: PCE"
 	debugInput <- getLine
-	let debug = read debugInput :: Int
+	let debug = read debugInput :: Integer
 	putStrLn "Enter value of Vocabulary 'n' (Integer n > 0)"
 	nInput <- getLine
-	let n = read nInput :: Int
+	let n = read nInput :: Integer
 	if debug == 1 then print $ PCE.paTop n
 	else if debug == 2 
 		then do
 			putStrLn "*** DEBUG 'assign' ***"
 			putStrLn "Enter Literal value" 
 		     	lInput <- getLine
-		     	let l = read lInput :: Int
+		     	let l = read lInput :: Integer
 		     	print $ assign n l
 	else if debug == 3
 		then do

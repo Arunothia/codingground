@@ -58,9 +58,9 @@ instance Ord PA where
 -- paTop is the fully unidentified partial assignment.
 -- Partial Assignment in this code is defined by the data type Maybe [PAValue]
 
-paTop :: Int -> PA
+paTop :: Integer -> PA
 paTop 0 = error "[paTop:] Empty Vocabulary"
-paTop n = PA $Just (replicate n PAQuest)
+paTop n = PA $Just (replicate (fromIntegral n) PAQuest)
 
 ------------------------------------------------------------------------------------------------------------
 
@@ -69,14 +69,14 @@ paTop n = PA $Just (replicate n PAQuest)
 -- It takes an integer (negative for negated variables) and returns a partial assignment.
 -- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals a contradiction.
  
-assign :: Int -> Int -> PA
+assign :: Integer -> Integer -> PA
 assign n 0 = error "[assign:] Literal value cannot be '0'"
 assign 0 _ = error "[assign:] Empty Vocabulary"
 assign n l
 	| (abs(l) > n) = error "Invalid Literal"
 	| (l > 0) = PA $Just(init(first) ++ [PATrue] ++ second) 
 	| otherwise = PA $Just(init(first) ++ [PAFalse] ++ second)
-	where  (first,second) = Data.List.splitAt (abs(l)) (fromJust $unPA (paTop n))
+	where  (first,second) = Data.List.splitAt (fromIntegral(abs(l))) (fromJust $unPA (paTop n))
 
 ------------------------------------------------------------------------------------------------------------
 		  
@@ -102,7 +102,7 @@ paMeet (PA (Just p)) (PA (Just q)) = PA $ sequence unifiedPA
 -- It takes a list of integers (that represents a clause) as input.
 -- It takes an integer 'n' - that is the vocabulary value.
 
-up :: Int -> [Int] -> PA -> PA
+up :: Integer -> [Integer] -> PA -> PA
 up _ _ (PA Nothing)  = (PA Nothing)
 up n c (PA (Just p))
 	| (((length c) -1 ==paFalseCount)&&(paQuestCount ==1)) 
@@ -110,7 +110,7 @@ up n c (PA (Just p))
 	| otherwise 					       = (PA (Just p))
 		where	paQuestCount = length (Prelude.filter (==PAQuest) paValueListOfC)
 			paFalseCount = length (Prelude.filter (==PAFalse) paValueListOfC)
-			paValueListOfC = map assignPAValueToL c
+			paValueListOfC = map (assignPAValueToL . fromIntegral) c
 			assignPAValueToL l
 				| (l > 0) = p !! (l-1)
 				| (l == 0) = error "[up:] Literal Value cannot be '0'"
@@ -126,7 +126,7 @@ up n c (PA (Just p))
 -- It takes the vocabulary value 'n', a set of clauses (List of list of integers) and a partial assignment as the input.
 -- It outputs the GFP of unit propagation as mentioned in the paper.
 
-gfpUP :: Int -> [[Int]] -> PA -> PA
+gfpUP :: Integer -> [[Integer]] -> PA -> PA
 gfpUP n setC p = greatestFP p
 	where greatestFP q
 		| (q == (bigPAMeet setC q)) = q
@@ -154,33 +154,33 @@ gfpUP n setC p = greatestFP p
 -- (3) Postive Integer i represents the literal X_i and negative integer i represents the literal !X_i. 
 -- (4) Integer 0 is not included in the representation.
 
-pce :: Int -> [[Int]] -> [[Int]] -> MinHeap PA -> [[Int]]
+pce :: Integer -> [[Integer]] -> [[Integer]] -> MinHeap PA -> [[Integer]]
 pce n e eRef pq
 	| (isEmpty pq) = e
 	| otherwise = pce n eNew eRef pqNew
-		where 	pqNew = foldl' pushPQ empty paPrimeSatList		-- New Priority Queue after Loop.
-			eNew = Data.List.union e (map mus paPrimeUnSatList)	-- New E after Loop.
-			pushPQ queue p = Data.Heap.insert p queue		-- MUS (Unsatisfiable Core - not minimal)
-			mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
-			mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]) )
-			(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
-			isSat p = isJust(AI.Surely.solve $Prelude.filter (/= []) (map (applyPA p) e))
-			applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
-			applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map (f p) c)
-			f p l
-			  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else l)
-			  |(l == 0) = error "Literal Value cannot be '0'"
-			  |otherwise =  if (p!!(abs(l)-1)) == PATrue then 0 else (if (p!!(abs(l)-1)) == PAFalse then (n+1) else l)
-			isTrue [] = []
-			isTrue (x:xs)
-			  |(x == (n+1)) = []
-			  |otherwise = isTrue xs
-			paPrimeList = map paPrime loopList 			-- The pa' list 
-			loopList = negEach $findIndices (==PAQuest) paE 	-- The literal set for the loop.
-			negEach xs = foldr negate [] xs  	
-    			negate x y = (x+1): -(x+1) : y 			
-			paPrime l = paMeet pa (assign n l) 			-- pa' evaluation  
-			paE = fromJust $ unPA $ gfpUP n e pa 			-- partial assignment returned from UP(E)(pa)
-			pa = fromJust(viewHead pq) 				-- pa <- PQ.pop()
+	  where pqNew = foldl' pushPQ empty paPrimeSatList				-- New Priority Queue after Loop.
+		eNew = Data.List.union e (map (map toInteger . mus) paPrimeUnSatList)	-- New E after Loop.
+		pushPQ queue p = Data.Heap.insert p queue			-- MUS (Unsatisfiable Core - not minimal)
+		mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
+		mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..(fromIntegral n)]))
+		(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
+		isSat p = isJust(AI.Surely.solve $sequence (map (applyPA p) eRef))
+		applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
+		applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map ((f p).fromIntegral) c)
+		f p l
+		  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else toInteger l)
+		  |(l == 0) = error "Literal Value cannot be '0'"
+		  |otherwise = if (p!!(abs(l)-1)) == PATrue then 0 else (if (p!!(abs(l)-1)) == PAFalse then (n+1) else toInteger l)
+		isTrue [] = Nothing
+		isTrue x
+		  |length(Prelude.filter (/=n+1) x) == 0 = Just x
+		  |otherwise = Just []
+		paPrimeList = map (paPrime . toInteger) loopList 		-- The pa' list 
+		loopList = negEach $findIndices (==PAQuest) paE 		-- The literal set for the loop.
+		negEach xs = foldr negate [] xs  	
+    		negate x y = (x+1): -(x+1) : y 			
+		paPrime l = paMeet pa (assign n l) 				-- pa' evaluation  
+		paE = fromJust $ unPA $ gfpUP n e pa 				-- partial assignment returned from UP(E)(pa)
+		pa = fromJust(viewHead pq) 					-- pa <- PQ.pop()
 
 ------------------------------------------------------------------------------------------------------------
