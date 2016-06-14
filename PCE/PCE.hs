@@ -9,7 +9,7 @@ import Data.Heap
 -- For find Function for List manipulation
 import Data.List
 
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 -- HELPER FUNCTIONS
 
 -- fromJust Function
@@ -59,10 +59,10 @@ instance Ord PA where
 -- Partial Assignment in this code is defined by the data type Maybe [PAValue]
 
 paTop :: Int -> PA
-paTop 0 = error "Empty Vocabulary"
+paTop 0 = error "[paTop:] Empty Vocabulary"
 paTop n = PA $Just (replicate n PAQuest)
 
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 
 -- assign Function defines a partial assignment when a literal is specified.
 -- Its first integer input stands for 'n' - that denotes the vocabulary.
@@ -70,15 +70,15 @@ paTop n = PA $Just (replicate n PAQuest)
 -- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals a contradiction.
  
 assign :: Int -> Int -> PA
-assign n 0 = error "Literal value cannot be '0'"
-assign 0 _ = error "Empty Vocabulary"
+assign n 0 = error "[assign:] Literal value cannot be '0'"
+assign 0 _ = error "[assign:] Empty Vocabulary"
 assign n l
 	| (abs(l) > n) = error "Invalid Literal"
 	| (l > 0) = PA $Just(init(first) ++ [PATrue] ++ second) 
 	| otherwise = PA $Just(init(first) ++ [PAFalse] ++ second)
 	where  (first,second) = Data.List.splitAt (abs(l)) (fromJust $unPA (paTop n))
 
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 		  
 -- paMeet Function defines the 'meet' operator for combining two partial assignments.
 -- If the two partial assignments lead to a contradiction, then we return Nothing (denoting contradiction).
@@ -96,7 +96,7 @@ paMeet (PA (Just p)) (PA (Just q)) = PA $ sequence unifiedPA
 		| (b == PAQuest) = (Just a)
 		| otherwise = Nothing
 
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 
 -- up(c) Function defines a unit propagation function that takes a partial assignment to another partial assignment.
 -- It takes a list of integers (that represents a clause) as input.
@@ -113,14 +113,14 @@ up n c (PA (Just p))
 			paValueListOfC = map assignPAValueToL c
 			assignPAValueToL l
 				| (l > 0) = p !! (l-1)
-				| (l == 0) = error "Literal Value cannot be '0'"
+				| (l == 0) = error "[up:] Literal Value cannot be '0'"
 				| otherwise = invertPAValue (p !! (abs(l)-1))
 			invertPAValue v
 				| (v == PAFalse) = PATrue
 				| (v == PATrue) = PAFalse
 				| otherwise = v
 
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 
 -- gfpUP Function - Greatest Fixed Point of applying up(c) for each clause in the encoding.
 -- It takes the vocabulary value 'n', a set of clauses (List of list of integers) and a partial assignment as the input.
@@ -134,7 +134,7 @@ gfpUP n setC p = greatestFP p
 	      bigPAMeet [] q = q
 	      bigPAMeet (c:rest) q = bigPAMeet rest (up n c q)  
 
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 
 -- pce is the function that will function as our Algorithm-1
 -- PCE - stands for Propagation Complete Encodings
@@ -164,15 +164,23 @@ pce n e eRef pq
 			mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
 			mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]) )
 			(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
-			isSat p = isJust(AI.Surely.solve $applyPA p)
-			applyPA (PA Nothing) = error "paPrimeList had a contradicting assignment"
-			applyPA (PA (Just p))= [] -- To be completed!!!!!
+			isSat p = isJust(AI.Surely.solve $Prelude.filter (/= []) (map (applyPA p) e))
+			applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
+			applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map (f p) c)
+			f p l
+			  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else l)
+			  |(l == 0) = error "Literal Value cannot be '0'"
+			  |otherwise =  if (p!!(abs(l)-1)) == PATrue then 0 else (if (p!!(abs(l)-1)) == PAFalse then (n+1) else l)
+			isTrue [] = []
+			isTrue (x:xs)
+			  |(x == (n+1)) = []
+			  |otherwise = isTrue xs
 			paPrimeList = map paPrime loopList 			-- The pa' list 
 			loopList = negEach $findIndices (==PAQuest) paE 	-- The literal set for the loop.
 			negEach xs = foldr negate [] xs  	
-    			negate x y = x : -x : y 			
+    			negate x y = (x+1): -(x+1) : y 			
 			paPrime l = paMeet pa (assign n l) 			-- pa' evaluation  
 			paE = fromJust $ unPA $ gfpUP n e pa 			-- partial assignment returned from UP(E)(pa)
 			pa = fromJust(viewHead pq) 				-- pa <- PQ.pop()
 
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
