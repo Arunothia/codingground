@@ -8,6 +8,7 @@ import AI.Surely
 import Data.Heap 
 -- For find Function for List manipulation
 import Data.List
+import System.IO.Unsafe
 
 ------------------------------------------------------------------------------------------------------------
 -- HELPER FUNCTIONS
@@ -23,6 +24,14 @@ fromJust (Just x) = x
 isJust 	:: Maybe a -> Bool
 isJust Nothing 	= False
 isJust (Just _) = True
+
+-- Print Function for debugging
+-- To debug any variable just call $unsafePerformIO $debugPrint <variable>
+
+debugPrint x = do
+        	_ <- print x
+        	return x
+
 
 ------------------------------------------------------------------------------------------------------------
 
@@ -154,7 +163,7 @@ gfpUP n setC p = greatestFP p
 -- (3) Postive Integer i represents the literal X_i and negative integer i represents the literal !X_i. 
 -- (4) Integer 0 is not included in the representation.
 
-pce :: Integer -> [[Integer]] -> [[Integer]] -> MinHeap PA -> [[Integer]]
+pce :: Integer -> [[Integer]] -> [[Integer]] -> MaxHeap PA -> [[Integer]]
 pce n e eRef pq
 	| (isEmpty pq) = e
 	| otherwise = pce n eNew eRef pqNew
@@ -166,7 +175,7 @@ pce n e eRef pq
 		(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
 		isSat p =  isJust $ AI.Surely.solve $sequence $Data.List.nub (map (applyPA p) eRef)
 		applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
-		applyPA _ [] = Just []
+		applyPA _ [] = Just [-1,1]
 		applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map ((f p).fromIntegral) c)
 		f p l
 		  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else toInteger l)
@@ -174,7 +183,7 @@ pce n e eRef pq
 		  |otherwise = if (p!!(abs(l)-1)) == PATrue then 0 else (if (p!!(abs(l)-1)) == PAFalse then (n+1) else toInteger l)
 		isTrue [] = Nothing
 		isTrue x
-		  |length(Prelude.filter (==(n+1)) x) > 0 = Just []
+		  |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
 		  |otherwise = Just x
 		paPrimeList = map (paPrime . toInteger) loopList 		-- The pa' list 
 		loopList = negEach $map (+ 1) $findIndices (==PAQuest) paE 	-- The literal set for the loop.

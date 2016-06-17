@@ -1,5 +1,5 @@
 -- This code has been taken from - https://gist.github.com/gatlin/1755736
--- The type of Solve has been changed from [[Integer]] -> Maybe [Integer] to Maybe [[Integer]] = Maybe [Integer]
+-- The type of Solve has been changed from [[Integer]] -> Maybe [Integer] to Maybe [[Integer]] -> Maybe [Integer]
 
 -- This is going to be on Hackage soon! https://github.com/gatlin/surely
 
@@ -88,5 +88,4 @@ simplify !f !l = [ simpClause x l | x <- f, not (elem l x) ]
 --   conjunction and the inner lists as disjunctions.
 solve :: Maybe [[Integer]] -> Maybe [Integer]
 solve Nothing 	 = Nothing
-solve (Just [[]]) = Just []
 solve (Just lst) = (dpll . flip SolverState []) lst

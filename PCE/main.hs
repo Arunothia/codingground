@@ -56,10 +56,10 @@ main = do
                 inputE <- getLine
                 let tmp1 = splitOneOf "," inputE
                 let e = (Prelude.map ((map read).words) tmp1)
+		let eCall = if e == [[]] then [] else e
 		putStrLn "Enter E_ref (Each clause is space seperated literals) and the clauses are seperated by ','"
                 inputERef <- getLine
                 let tmp2 = splitOneOf "," inputERef
                 let eRef = (Prelude.map ((map read).words) tmp2)
-		let pq = singleton (paTop n) :: MinHeap PA
-		-- print $ solve (Just [[]])   Have made this explicitly (Just []) in the sat.hs file
-		print $ pce n e eRef pq
+		let pq = singleton (paTop n) :: MaxHeap PA
+		print $ pce n eCall eRef pq
