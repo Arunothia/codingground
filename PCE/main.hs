@@ -61,4 +61,5 @@ main = do
                 let tmp2 = splitOneOf "," inputERef
                 let eRef = (Prelude.map ((map read).words) tmp2)
 		let pq = singleton (paTop n) :: MinHeap PA
+		-- print $ solve (Just [[]])   Have made this explicitly (Just []) in the sat.hs file
 		print $ pce n e eRef pq

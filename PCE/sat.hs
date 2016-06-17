@@ -88,4 +88,5 @@ simplify !f !l = [ simpClause x l | x <- f, not (elem l x) ]
 --   conjunction and the inner lists as disjunctions.
 solve :: Maybe [[Integer]] -> Maybe [Integer]
 solve Nothing 	 = Nothing
+solve (Just [[]]) = Just []
 solve (Just lst) = (dpll . flip SolverState []) lst
