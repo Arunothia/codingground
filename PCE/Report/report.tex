@@ -35,7 +35,7 @@
 \end{center}
 \vspace*{2cm}~
 \begin{abstract}
- In this project, we implemented the algorithm given in ~\cite{PCE} in Haskell.   
+ In this project, we are implementing the algorithm given in ~\cite{PCE} in Haskell. We define Partial Assignments as Maybe[PAValue] where PAValue is the data type that can either be True, False or Question. The ordering amongst Partial Assignments are established as - Nothing (contradicting Partial Assignment) as the least and the more the undefined the partial assignment is, higher it is in the ordering. For the implementation of Priority Queues, we use Haskell Package Data.Heap. From the ordering of Partial Assignments mentioned, it is clear that we used maxHeap to mimic the priority queue desired. Sat Solver for the implementation has been taken from ~\cite{sat.hs}.      
 \end{abstract}
 
 \begin{center}
