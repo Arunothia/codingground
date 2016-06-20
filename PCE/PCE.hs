@@ -8,6 +8,7 @@ import AI.Surely
 import Data.Heap 
 -- For find Function for List manipulation
 import Data.List
+-- For Printing Debug Statements
 import System.IO.Unsafe
 
 ------------------------------------------------------------------------------------------------------------
@@ -31,7 +32,6 @@ isJust (Just _) = True
 debugPrint x = do
         	_ <- print x
         	return x
-
 
 ------------------------------------------------------------------------------------------------------------
 
@@ -167,7 +167,9 @@ pce :: Integer -> [[Integer]] -> [[Integer]] -> MaxHeap PA -> [[Integer]]
 pce n e eRef pq
 	| (isEmpty pq) = e
 	| otherwise = pce n eNew eRef pqNew
-	  where pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList		-- New Priority Queue after Loop.
+	  where pqNewCompact = foldl' queueAdd empty $toList pqNew			-- PQ.Compact() implemented
+		queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
+		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList		-- New Priority Queue after Loop.
 		eNew = Data.List.union e (map (map toInteger . mus) paPrimeUnSatList)	-- New E after Loop.
 		pushPQ queue p = Data.Heap.insert p queue			-- MUS (Unsatisfiable Core - not minimal)
 		mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
