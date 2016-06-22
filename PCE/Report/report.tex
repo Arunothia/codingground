@@ -34,8 +34,9 @@
 \emph{Submitted to Prof. Harald Sondergaard as a part of Research Internship (May'16 - July'16)}
 \end{center}
 \vspace*{2cm}~
+
 \begin{abstract}
-      
+ In this project, we implemented the algorithm given in ~\cite{PCE} for finding the propagation complete encoding for any given input encoding. Propagation complete encodings are those encodings who when fed to a SAT Solver can efficiently prune away all the unyielding paths that could otherwise occur while performing unit propagation. The implementation has been done in Haskell.  
 \end{abstract}
 
 \begin{center}
@@ -43,11 +44,30 @@
 \large{Computing and Information Systems \\ University of Melbourne}
 \end{center}
 \newpage
-\section{Introduction}
- In this project, we implemented the algorithm given in ~\cite{PCE} in Haskell. 
-
-\section{Methodology} 
-We define Partial Assignments as Maybe[PAValue] where PAValue is the data type that can either be True, False or Question. The ordering amongst Partial Assignments are established as - Nothing (contradicting Partial Assignment) as the least and the more the undefined the partial assignment is, higher it is in the ordering. For the implementation of Priority Queues, we use Haskell Package Data.Heap. From the ordering of Partial Assignments mentioned, it is clear that we used maxHeap to mimic the priority queue desired. Sat Solver for the implementation has been taken from ~\cite{sat.hs}.
+\section{Implementation Details} 
+\subsection{Representing CNF}
+In our implementation, we represent a CNF encoding as a list of list of integers.
+\begin{itemize}
+\item The elements within the outer list are to be combined with an AND.
+\item The elements within the innner list are to be combined with an OR.
+\item Positive Integer $i$ represents the literal $X_i$ and negative integer $i$ represents the literal $\neg X_i$. 
+\item Integer $0$ is not included in the representation and hence should be avoided.
+\end{itemize}
+\subsection{Input Format}
+We assume the input to be a CNF encoding. The input arguments are 
+\begin{itemize}
+\item An integer 'n', implying the vocabulary or variable set is $X_1$ to $X_n$
+\item A list of list of integers that will represent the CNF of E that is being computed (It will be $E_0$ at the start)
+\item A list of list of integers that will represent the CNF of $E_{ref}$ (which is the CNF for which equi-satisfiable formula is to be found)
+\item A minHeap (priority queue) that is required by the algorithm for looping. It is not a user input argument. It should by default be a singleton queue with the fully undefined partial assignment.
+\end{itemize}
+\subsection{Output Format}
+The output is 
+\begin{itemize}
+\item List of list of Integers representing the encoding that is equi-satisfiable to $E_{ref}$ and is propagation complete.
+\end{itemize}
+\subsection{Methodology in Haskell}
+PAValue is the defined Data Type that can either be PATrue, PAFalse or PAQuest representing the values True, False or Question that a partial assignment can assign to a variable. We define Partial Assignments as Maybe[PAValue], where Nothing represents the contradicting partial assignment or the bottom. The ordering amongst Partial Assignments are established as - Nothing at the least and more undefined the partial assignment is, higher it is in the ordering. For the implementation of Priority Queues, we use Haskell Package Data.Heap. From the ordering of Partial Assignments mentioned, it is clear that we used maxHeap to mimic the priority queue desired. Sat Solver for the implementation has been taken from ~\cite{sat.hs}.
 
 \section{Examples}
 \subsection{If-then-Else Gadget}
