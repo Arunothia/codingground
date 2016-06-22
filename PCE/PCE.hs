@@ -166,7 +166,7 @@ gfpUP n setC p = greatestFP p
 pce :: Integer -> [[Integer]] -> [[Integer]] -> MaxHeap PA -> [[Integer]]
 pce n e eRef pq
 	| (isEmpty pq) = e
-	| otherwise = pce n eNew eRef pqNew
+	| otherwise = pce n eNew eRef pqNewCompact
 	  where pqNewCompact = foldl' queueAdd empty $toList pqNew			-- PQ.Compact() implemented
 		queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
 		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList		-- New Priority Queue after Loop.
