@@ -82,6 +82,47 @@ Which in the CNF form corresponds to
 \begin{center}
 $(\neg b \vee \neg x \vee y) \wedge (\neg b \vee \neg y \vee x) \wedge (b \vee \neg x \vee z) \wedge (b \vee \neg z \vee x)$
 \end{center}
+Hence, the input to our algorithm is
+\begin{center}
+$n = 4$\\
+$E_0 = [[]]$ \\
+$E_ref = [[-2,-1,3],[-2,-3,1],[2,-1,4],[2,1,-4]]$
+\end{center}
+The output as given by the algorithm is 
+\begin{center}
+$E = [[-1,2,4],[-1,3,4],[-1,-2,3],[1,-2,-3],[1,-3,-4],[1,2,-4]]$
+\end{center}
+The additional $2$ clauses being 
+\begin{center}
+$((y \wedge z) \longrightarrow x) \wedge ((\neg y \wedge \neg z) \longrightarrow \neg x)$
+\end{center}
+\subsection{Unsigned-less-than Gadget}
+In the following $b_{in}$ stands for the input which marks whether the digits till here have been found to be smaller or not.
+\begin{center}
+$b_{out} = (x < y)$ $or$ $((x == y) \wedge b_{in})$   
+\end{center}
+Which can be encoded as -
+\begin{center}
+$ (b_{out} \longleftrightarrow (\neg x \wedge y) \vee ((x \longrightarrow y) \wedge b_{in})$  
+\end{center}
+Which in the CNF form corresponds to
+\begin{center}
+$(x \vee \neg y \vee b_{out}) \wedge (x \vee b_{in} \vee b_{out}) \wedge (\neg y \vee b_{in} \vee b_{out}) \wedge (\neg b_{out} \vee \neg x \vee y) \wedge (\neg b_{out} \vee \neg x \vee b_{in}) \wedge (\neg b_{out} \vee y \vee b_{in})$
+\end{center}
+Hence, the input to our algorithm is
+\begin{center}
+$n = 4$\\
+$E_0 = [[]]$ \\
+$E_ref = [[1,-2,4],[1,3,4],[-2,3,4],[-4,-1,2],[-4,-1,3],[-4,2,3]]$
+\end{center}
+The output as given by the algorithm is 
+\begin{center}
+$E = [[1,-2,4],[1,3,4],[1,2,3],[-1,2,-4],[2,3,-4],[-2,3,4],[-1,3,-4],[-1,-2,3]]$
+\end{center}
+The additional $2$ clauses being 
+\begin{center}
+$((x \wedge y) \longrightarrow b_{in}) \wedge ((\neg x \wedge \neg y) \longrightarrow b_{in})$
+\end{center}
 \nocite{*}
 \bibliographystyle{unsrt}
 \bibliography{ref}
