@@ -163,10 +163,10 @@ gfpUP n setC p = greatestFP p
 -- (3) Postive Integer i represents the literal X_i and negative integer i represents the literal !X_i. 
 -- (4) Integer 0 is not included in the representation.
 
-pce :: Integer -> [[Integer]] -> [[Integer]] -> MaxHeap PA -> [[Integer]]
-pce n e eRef pq
+pce :: Integer -> [Integer] -> [[Integer]] -> [[Integer]] -> MaxHeap PA -> [[Integer]]
+pce n lst e eRef pq
 	| (isEmpty pq) = e
-	| otherwise = pce n eNew eRef pqNewCompact
+	| otherwise = pce n lst eNew eRef pqNewCompact
 	  where pqNewCompact = foldl' queueAdd empty $toList pqNew			-- PQ.Compact() implemented
 		queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
 		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList		-- New Priority Queue after Loop.
@@ -187,8 +187,9 @@ pce n e eRef pq
 		isTrue x
 		  |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
 		  |otherwise = Just x
-		paPrimeList = map (paPrime . toInteger) loopList 		-- The pa' list 
-		loopList = negEach $map (+ 1) $findIndices (==PAQuest) paE 	-- The literal set for the loop.
+		paPrimeList = map paPrime loopList 				-- The pa' list 
+		loopList = negEach $intersect lst $map fromIntegral $map (+ 1) $findIndices (==PAQuest) paE 	
+										-- The literal set for the loop.
 		negEach xs = foldr negate [] xs  	
     		negate x y = x: -x : y 			
 		paPrime l = paMeet pa (assign n l) 				-- pa' evaluation  

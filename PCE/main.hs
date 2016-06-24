@@ -52,6 +52,8 @@ main = do
 			print $ gfpUP n setC (PA (Just p))
 	else do
 		putStrLn "*** Computing Propagation Complete Encodings (PCE) ***"
+		putStrLn "Enter the variables of interest (list of integers)"
+		lst <- readInt
 		putStrLn "Enter E_0 (Each clause is space seperated literals) and the clauses are seperated by ','"
                 inputE <- getLine
                 let tmp1 = splitOneOf "," inputE
@@ -62,4 +64,4 @@ main = do
                 let tmp2 = splitOneOf "," inputERef
                 let eRef = (Prelude.map ((map read).words) tmp2)
 		let pq = singleton (paTop n) :: MaxHeap PA
-		print $ pce n eCall eRef pq
+		print $ pce n lst eCall eRef pq
