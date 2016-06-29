@@ -1,0 +1,13 @@
+Enter 
+1: Debug paTop
+2: Debug assign
+3: Debug paMeet
+4: Debug up(Unit Propagation)
+5: Debug gfpUP
+ANY OTHER NUMBER: PCE
+Enter value of Vocabulary 'n' (Integer n > 0)
+*** Computing Propagation Complete Encodings (PCE) ***
+Enter the variables of interest (list of integers)
+Enter E_0 (Each clause is space seperated literals) and the clauses are seperated by ','
+Enter E_ref (Each clause is space seperated literals) and the clauses are seperated by ','
+[[2,-3,6],[-3,-5,6],[-2,5,-6],[3,5,-6],[2,-5,6],[-2,3,-6]]

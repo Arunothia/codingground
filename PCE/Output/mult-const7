@@ -1,0 +1,13 @@
+Enter 
+1: Debug paTop
+2: Debug assign
+3: Debug paMeet
+4: Debug up(Unit Propagation)
+5: Debug gfpUP
+ANY OTHER NUMBER: PCE
+Enter value of Vocabulary 'n' (Integer n > 0)
+*** Computing Propagation Complete Encodings (PCE) ***
+Enter the variables of interest (list of integers)
+Enter E_0 (Each clause is space seperated literals) and the clauses are seperated by ','
+Enter E_ref (Each clause is space seperated literals) and the clauses are seperated by ','
+[[-2,3],[-2,-22],[7,-46],[-12,-46],[-6,-34],[2,-3],[-2,6,34],[-4,6,34],[6,-7,34],[-3,6,34],[6,-12,34],[6,-22,34],[6,34,-46],[4,12,-22],[4,12,-34],[-4,22,34],[-7,34,46],[2,-7,22],[3,-7,22],[-7,-12,22],[-7,22,46],[6,12,-22],[-4,-7,-12],[-4,-7,46],[-2,12,46],[-4,12,46],[-7,12,46],[-3,12,46],[-6,12,46],[12,-22,46],[12,-34,46],[-2,4,6],[-3,4,6],[4,6,-46],[4,-22,34],[4,22,-34],[6,7,-22,46],[4,7,-22,46],[4,7,-34,46],[2,-4,6,-34],[3,-4,6,-34],[-4,6,-22,-34],[2,3,12,-34],[2,3,-4,6],[2,3,6,-46],[2,3,4,-6],[2,3,4,-46],[2,7,-12,22,46],[3,7,-12,22,46],[2,3,7,-34,46],[2,4,-6,22,34],[3,4,-6,22,34],[2,3,-12,22,46]]
