@@ -4,7 +4,7 @@ import PCE
 import Data.List.Split
 import Data.Heap
 
-readInt :: IO [Integer]
+readInt :: IO [Int]
 readInt = fmap (Prelude.map read. Prelude.words) getLine
 
 readPAValue :: IO [PAValue]
@@ -14,17 +14,17 @@ main = do
 	putStrLn "Enter \n1: Debug paTop\n2: Debug assign\n3: Debug paMeet\n4: Debug up(Unit Propagation)\n5: Debug gfpUP"
 	putStrLn "ANY OTHER NUMBER: PCE"
 	debugInput <- getLine
-	let debug = read debugInput :: Integer
-	putStrLn "Enter value of Vocabulary 'n' (Integer n > 0)"
+	let debug = read debugInput :: Int
+	putStrLn "Enter value of Vocabulary 'n' (Int n > 0)"
 	nInput <- getLine
-	let n = read nInput :: Integer
+	let n = read nInput :: Int
 	if debug == 1 then print $ PCE.paTop n
 	else if debug == 2 
 		then do
 			putStrLn "*** DEBUG 'assign' ***"
 			putStrLn "Enter Literal value" 
 		     	lInput <- getLine
-		     	let l = read lInput :: Integer
+		     	let l = read lInput :: Int
 		     	print $ assign n l
 	else if debug == 3
 		then do
@@ -64,4 +64,4 @@ main = do
                 let tmp2 = splitOneOf "," inputERef
                 let eRef = (Prelude.map ((map read).words) tmp2)
 		let pq = singleton (paTop n) :: MaxHeap PA
-		print $ pce n lst eCall eRef pq
+		print $ pcePicosat n lst eCall eRef pq

@@ -4,6 +4,7 @@
 module PCE where
 -- For SAT Solver
 import AI.Surely 
+import Picosat
 -- For Priority Queue 
 import Data.Heap 
 -- For find Function for List manipulation
@@ -25,6 +26,12 @@ fromJust (Just x) = x
 isJust 	:: Maybe a -> Bool
 isJust Nothing 	= False
 isJust (Just _) = True
+
+--isSolution Function
+
+isSolution :: Solution -> Bool
+isSolution Unsatisfiable = False
+isSolution (Solution _)  = True
 
 -- Print Function for debugging
 -- To debug any variable just call $unsafePerformIO $debugPrint <variable>
@@ -67,7 +74,7 @@ instance Ord PA where
 -- paTop is the fully unidentified partial assignment.
 -- Partial Assignment in this code is defined by the data type Maybe [PAValue]
 
-paTop :: Integer -> PA
+paTop :: Int -> PA
 paTop 0 = error "[paTop:] Empty Vocabulary"
 paTop n = PA $Just (replicate (fromIntegral n) PAQuest)
 
@@ -78,7 +85,7 @@ paTop n = PA $Just (replicate (fromIntegral n) PAQuest)
 -- It takes an integer (negative for negated variables) and returns a partial assignment.
 -- When the integer passed is zero (which should'nt be the case), the partial assignment returned marks all literals a contradiction.
  
-assign :: Integer -> Integer -> PA
+assign :: Int -> Int -> PA
 assign n 0 = error "[assign:] Literal value cannot be '0'"
 assign 0 _ = error "[assign:] Empty Vocabulary"
 assign n l
@@ -111,7 +118,7 @@ paMeet (PA (Just p)) (PA (Just q)) = PA $ sequence unifiedPA
 -- It takes a list of integers (that represents a clause) as input.
 -- It takes an integer 'n' - that is the vocabulary value.
 
-up :: Integer -> [Integer] -> PA -> PA
+up :: Int -> [Int] -> PA -> PA
 up _ _ (PA Nothing)  = (PA Nothing)
 up n c (PA (Just p))
 	| (((length c) -1 ==paFalseCount)&&(paQuestCount ==1)) 
@@ -135,7 +142,7 @@ up n c (PA (Just p))
 -- It takes the vocabulary value 'n', a set of clauses (List of list of integers) and a partial assignment as the input.
 -- It outputs the GFP of unit propagation as mentioned in the paper.
 
-gfpUP :: Integer -> [[Integer]] -> PA -> PA
+gfpUP :: Int -> [[Int]] -> PA -> PA
 gfpUP n setC p = greatestFP p
 	where greatestFP q
 		| (q == (bigPAMeet setC q)) = q
@@ -145,54 +152,109 @@ gfpUP n setC p = greatestFP p
 
 ------------------------------------------------------------------------------------------------------------
 
--- pce is the function that will function as our Algorithm-1
+-- pceAISurely is the function that will function as our Algorithm-1 (this function uses a not so good SAT Solver)
 -- PCE - stands for Propagation Complete Encodings
 
 -- Its arguments are
 -- (1) An integer 'n', implying the vocabulary or variable set is X_1 to X_n
 -- (2) A list of list of integers that will represent the CNF of E that is being computed (It will be E_0 at the start)
 -- (3) A list of list of integers that will represent the CNF of E_ref (which is the CNF for which equisatisfiable formula is to be found)
--- (4) A minHeap (priority queue) that is required by the algorithm for looping.
+-- (4) A maxHeap (priority queue) that is required by the algorithm for looping.
 
 -- It returns 
--- (1) List of list of Integers representing the encoding that is equisatisfiable to E_ref and is propagation complete.
+-- (1) List of list of Ints representing the encoding that is equisatisfiable to E_ref and is propagation complete.
 
--- How List of List of Integers represent a CNF?
+-- How List of List of Ints represent a CNF?
 -- (1) The elements within the outer list are to be combined with an AND.
 -- (2) The elements within the innner list are to be combined with an OR.
--- (3) Postive Integer i represents the literal X_i and negative integer i represents the literal !X_i. 
--- (4) Integer 0 is not included in the representation.
+-- (3) Postive Int i represents the literal X_i and negative integer i represents the literal !X_i. 
+-- (4) Int 0 is not included in the representation.
 
-pce :: Integer -> [Integer] -> [[Integer]] -> [[Integer]] -> MaxHeap PA -> [[Integer]]
-pce n lst e eRef pq
+pceAISurely :: Int -> [Int] -> [[Int]] -> [[Int]] -> MaxHeap PA -> [[Int]]
+pceAISurely n lst e eRef pq
 	| (isEmpty pq) = e
-	| otherwise = pce n lst eNew eRef pqNewCompact
+	| otherwise = pceAISurely n lst eNew eRef pqNewCompact
 	  where pqNewCompact = foldl' queueAdd empty $toList pqNew			-- PQ.Compact() implemented
 		queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
 		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList		-- New Priority Queue after Loop.
-		eNew = Data.List.union e (map (map toInteger . mus) paPrimeUnSatList)	-- New E after Loop.
+		eNew = Data.List.union e (map mus paPrimeUnSatList)		-- New E after Loop.
 		pushPQ queue p = Data.Heap.insert p queue			-- MUS (Unsatisfiable Core - not minimal)
 		mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
-		mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..(fromIntegral n)]))
+		mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]))
 		(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
 		isSat p =  isJust $ AI.Surely.solve $sequence $Data.List.nub (map (applyPA p) eRef)
 		applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
 		applyPA _ [] = Just [-1,1]
-		applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map ((f p).fromIntegral) c)
+		applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map (f p) c)
 		f p l
-		  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else toInteger l)
+		  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else l)
 		  |(l == 0) = error "Literal Value cannot be '0'"
-		  |otherwise = if (p!!(abs(l)-1)) == PATrue then 0 else (if (p!!(abs(l)-1)) == PAFalse then (n+1) else toInteger l)
+		  |otherwise = if (p!!(abs(l)-1)) == PATrue then 0 else (if (p!!(abs(l)-1)) == PAFalse then (n+1) else l)
 		isTrue [] = Nothing
 		isTrue x
 		  |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
 		  |otherwise = Just x
 		paPrimeList = map paPrime loopList 				-- The pa' list 
-		loopList = negEach $intersect lst $map fromIntegral $map (+ 1) $findIndices (==PAQuest) paE 	
+		loopList = negEach $intersect lst $map (+ 1) $findIndices (==PAQuest) paE 	
 										-- The literal set for the loop.
 		negEach xs = foldr negate [] xs  	
     		negate x y = x: -x : y 			
 		paPrime l = paMeet pa (assign n l) 				-- pa' evaluation  
 		paE = fromJust $ unPA $ gfpUP n e pa 				-- partial assignment returned from UP(E)(pa)
 		pa = fromJust(viewHead pq) 					-- pa <- PQ.pop()
+------------------------------------------------------------------------------------------------------------
+
+-- pcePicosat is the function that will function as our Algorithm-1 (This function uses picosat Sat Solver)
+-- PCE - stands for Propagation Complete Encodings
+
+-- Its arguments are
+-- (1) An integer 'n', implying the vocabulary or variable set is X_1 to X_n
+-- (2) A list of list of integers that will represent the CNF of E that is being computed (It will be E_0 at the start)
+-- (3) A list of list of integers that will represent the CNF of E_ref (which is the CNF for which equisatisfiable formula is to be found)
+-- (4) A maxHeap (priority queue) that is required by the algorithm for looping.
+
+-- It returns 
+-- (1) List of list of Ints representing the encoding that is equisatisfiable to E_ref and is propagation complete.
+
+-- How List of List of Ints represent a CNF?
+-- (1) The elements within the outer list are to be combined with an AND.
+-- (2) The elements within the innner list are to be combined with an OR.
+-- (3) Postive Int i represents the literal X_i and negative integer i represents the literal !X_i. 
+-- (4) Int 0 is not included in the representation.
+
+pcePicosat :: Int -> [Int] -> [[Int]] -> [[Int]] -> MaxHeap PA -> [[Int]]
+pcePicosat n lst e eRef pq
+        | (isEmpty pq) = e
+        | otherwise = pcePicosat n lst eNew eRef pqNew
+          where pqNewCompact = foldl' queueAdd empty $toList pqNew                      -- PQ.Compact() implemented
+                queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
+                pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList              -- New Priority Queue after Loop.
+                eNew = Data.List.union e (map mus paPrimeUnSatList)   			-- New E after Loop.
+                pushPQ queue p = Data.Heap.insert p queue                       -- MUS (Unsatisfiable Core - not minimal)
+                mus (PA Nothing) = error "paPrimeList had a contradicting assignment"
+                mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]))
+                (paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
+                isSat p =  isSolution $unsafePerformIO $ Picosat.solve 
+					(if (solverQuery p) == Nothing then [[-1],[1]] else fromJust $solverQuery p)
+		solverQuery p = sequence $Data.List.nub (map (applyPA p) eRef)
+                applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
+                applyPA _ [] = Just [-1,1]
+                applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map (f p) c)
+                f p l
+                  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else l)
+                  |(l == 0) = error "Literal Value cannot be '0'"
+                  |otherwise = if (p!!(abs(l)-1)) == PATrue then 0 else (if (p!!(abs(l)-1)) == PAFalse then (n+1) else l)
+                isTrue [] = Nothing
+                isTrue x
+                  |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
+                  |otherwise = Just x
+                paPrimeList = map paPrime loopList                              -- The pa' list 
+                loopList = negEach $intersect lst $map (+ 1) $findIndices (==PAQuest) paE
+                                                                                -- The literal set for the loop.
+                negEach xs = foldr negate [] xs
+                negate x y = x: -x : y
+                paPrime l = paMeet pa (assign n l)                              -- pa' evaluation  
+                paE = fromJust $ unPA $ gfpUP n e pa                            -- partial assignment returned from UP(E)(pa)
+                pa = fromJust(viewHead pq)                                      -- pa <- PQ.pop()
+
 ------------------------------------------------------------------------------------------------------------

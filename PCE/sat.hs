@@ -1,5 +1,5 @@
 -- This code has been taken from - https://gist.github.com/gatlin/1755736
--- The type of Solve has been changed from [[Integer]] -> Maybe [Integer] to Maybe [[Integer]] -> Maybe [Integer]
+-- The type of Solve has been changed from [[Int]] -> Maybe [Int] to Maybe [[Int]] -> Maybe [Int]
 
 -- This is going to be on Hackage soon! https://github.com/gatlin/surely
 
@@ -21,7 +21,7 @@ module AI.Surely (solve) where
 import Data.Maybe
 import Control.Monad
 
-type Literal = Integer
+type Literal = Int
 type Clause  = [Literal]
 type Formula = [Clause]
 type Record  = [Literal]
@@ -84,8 +84,8 @@ simplify !f !l = [ simpClause x l | x <- f, not (elem l x) ]
         {-# INLINE simpClause #-}
 
 -- | The top-level function wrapping `dpll` and hiding the library internals.
---   Accepts a list of lists of Integers, treating the outer list as a
+--   Accepts a list of lists of Ints, treating the outer list as a
 --   conjunction and the inner lists as disjunctions.
-solve :: Maybe [[Integer]] -> Maybe [Integer]
+solve :: Maybe [[Int]] -> Maybe [Int]
 solve Nothing 	 = Nothing
 solve (Just lst) = (dpll . flip SolverState []) lst
