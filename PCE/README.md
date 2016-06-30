@@ -2,6 +2,10 @@
 
 Packages Needed to be installed -
 
+Picosat - For One of the SAT Solver
+
+	cabal install Picosat
+
 Heap  - For Priority Queue implementation
 
 	cabal install Heap
