@@ -5,9 +5,10 @@ Enter
 4: Debug up(Unit Propagation)
 5: Debug gfpUP
 ANY OTHER NUMBER: PCE
-Enter value of Vocabulary 'n' (Integer n > 0)
+Enter value of Vocabulary 'n' (Int n > 0)
 *** Computing Propagation Complete Encodings (PCE) ***
 Enter the variables of interest (list of integers)
 Enter E_0 (Each clause is space seperated literals) and the clauses are seperated by ','
 Enter E_ref (Each clause is space seperated literals) and the clauses are seperated by ','
-[[3,-37],[6,-37],[2,-37],[8,-37],[5,-37],[-11,-37],[-21,-37],[6,-21],[8,-21],[-5,-21],[3,-5],[2,-5],[3,6,-11],[2,3,-11],[6,8,-11],[2,8,-11],[-2,-3,5],[-3,11,-21],[-2,11,-21],[-5,-6,-8,37],[-5,-6,11,37],[-5,6,-8,11],[-6,-8,21,37],[-3,-8,11,37],[-5,-8,11,37],[-2,-6,11,37]]
+[[-5,-21],[-11,-37],[-21,-37],[2,-5],[2,-37],[3,-5],[3,-37],[5,-37],[6,-21],[6,-37],[8,-21],[8,-37],[-2,-3,5],[-2,-3,-21],[-2,11,-21],[-3,11,-21],[2,3,-11],[2,8,-11],[3,6,-11],[6,8,-11],[-5,-6,-8,-11],[-5,-6,-8,37],[-6,-8,-11,21],[-2,3,-6,11],[-2,-6,8,11],[2,-3,-8,11],[-3,6,-8,11],[2,-6,-8,21],[3,-6,-8,21],[5,-6,-8,21]]
+30

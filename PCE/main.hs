@@ -64,4 +64,6 @@ main = do
                 let tmp2 = splitOneOf "," inputERef
                 let eRef = (Prelude.map ((map read).words) tmp2)
 		let pq = singleton (paTop n) :: MaxHeap PA
-		print $ pcePicosat n lst eCall eRef pq
+		let answer = pcePicosat n lst eCall eRef pq
+		_  <- print answer
+		print $length answer

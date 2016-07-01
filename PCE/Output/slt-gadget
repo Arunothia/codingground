@@ -5,9 +5,10 @@ Enter
 4: Debug up(Unit Propagation)
 5: Debug gfpUP
 ANY OTHER NUMBER: PCE
-Enter value of Vocabulary 'n' (Integer n > 0)
+Enter value of Vocabulary 'n' (Int n > 0)
 *** Computing Propagation Complete Encodings (PCE) ***
 Enter the variables of interest (list of integers)
 Enter E_0 (Each clause is space seperated literals) and the clauses are seperated by ','
 Enter E_ref (Each clause is space seperated literals) and the clauses are seperated by ','
-[[-3,4,5],[-2,-3,5],[2,3,-4],[2,3,-5],[-2,-3,4],[3,-4,-5]]
+[[-2,-3,4],[-2,-3,5],[-3,4,5],[3,-4,-5],[2,3,-4],[2,3,-5]]
+6

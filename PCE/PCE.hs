@@ -62,13 +62,26 @@ newtype PA = PA (Maybe([PAValue]))
 unPA :: PA -> Maybe([PAValue])
 unPA (PA v) = v
 
--- The following defines an order on Partial Assignments (The more undefined, higher the value) 
+-- The following defines an order on Partial Assignments (The more undefined, higher the value)
+-- The order should be more defined than just count of PAQuest, refer definition 
 
 instance Ord PA where
   _ `compare` (PA Nothing) = GT
   (PA Nothing) `compare` _ = LT
-  PA (Just p) `compare` PA (Just q) = length(Prelude.filter (== PAQuest) p) `compare` length(Prelude.filter (== PAQuest) q)
-
+  PA (Just p) `compare` PA (Just q)
+	| (z /= EQ) = z
+	| (lx /= EQ) = lx
+	| (rx /= EQ) = rx
+	| otherwise = ry
+	where 	z = length(Prelude.filter (== PAQuest) p) `compare` length(Prelude.filter (== PAQuest) q)
+	      	px = findIndices (== PATrue) p
+		qx = findIndices (== PATrue) q
+		py = findIndices (== PAFalse) p
+		qy = findIndices (== PAFalse) q
+		lx = length(px) `compare` length(qx)
+		ly = length(py) `compare` length(qy)
+		rx = qx `compare` px
+		ry = qy `compare` py
 ------------------------------------------------------------------------------------------------------------
 
 -- paTop is the fully unidentified partial assignment.
@@ -173,10 +186,10 @@ gfpUP n setC p = greatestFP p
 pceAISurely :: Int -> [Int] -> [[Int]] -> [[Int]] -> MaxHeap PA -> [[Int]]
 pceAISurely n lst e eRef pq
 	| (isEmpty pq) = e
-	| otherwise = pceAISurely n lst eNew eRef pqNewCompact
-	  where pqNewCompact = foldl' queueAdd empty $toList pqNew			-- PQ.Compact() implemented
+	| otherwise = pceAISurely n lst eNew eRef pqNew				-- PQ.compact() not used yet	
+	  where pqNewCompact = foldl' queueAdd empty $toList pqNew		-- PQ.Compact() implemented
 		queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
-		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList		-- New Priority Queue after Loop.
+		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList	-- New Priority Queue after Loop.
 		eNew = Data.List.union e (map mus paPrimeUnSatList)		-- New E after Loop.
 		pushPQ queue p = Data.Heap.insert p queue			-- MUS (Unsatisfiable Core - not minimal)
 		mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
@@ -195,12 +208,16 @@ pceAISurely n lst e eRef pq
 		  |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
 		  |otherwise = Just x
 		paPrimeList = map paPrime loopList 				-- The pa' list 
-		loopList = negEach $intersect lst $map (+ 1) $findIndices (==PAQuest) paE 	
-										-- The literal set for the loop.
-		negEach xs = foldr negate [] xs  	
-    		negate x y = x: -x : y 			
-		paPrime l = paMeet pa (assign n l) 				-- pa' evaluation  
-		paE = fromJust $ unPA $ gfpUP n e pa 				-- partial assignment returned from UP(E)(pa)
+		loopList = negEach $intersect lst $map (+ 1) $Prelude.filter (>index) $findIndices (==PAQuest) paE
+                                                                                -- The literal set for the loop.
+                negEach xs = foldr negate [] xs
+                negate x y = x: -x : y
+                paPrime l = paMeet pa (assign n l)                              -- pa' evaluation  
+                paE = fromJust $ unPA $ gfpUP n e pa                            -- partial assignment returned from UP(E)(pa)
+                index                                                           -- Should not assign variables before this
+                  | (zlst == []) = -1                                           -- because otherwise there will be several 
+                  | otherwise = last zlst                                       -- repetitions
+                zlst = findIndices (/= PAQuest) $fromJust $unPA pa		
 		pa = fromJust(viewHead pq) 					-- pa <- PQ.pop()
 ------------------------------------------------------------------------------------------------------------
 
@@ -225,11 +242,12 @@ pceAISurely n lst e eRef pq
 pcePicosat :: Int -> [Int] -> [[Int]] -> [[Int]] -> MaxHeap PA -> [[Int]]
 pcePicosat n lst e eRef pq
         | (isEmpty pq) = e
-        | otherwise = pcePicosat n lst eNew eRef pqNew
-          where pqNewCompact = foldl' queueAdd empty $toList pqNew                      -- PQ.Compact() implemented
+        | otherwise = pcePicosat n lst eNew eRef pqNew				-- PQ.compact() not used yet
+          where pqNewCompact = foldl' queueAdd empty $toList pqNew              -- PQ.Compact() implemented
                 queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
-                pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList              -- New Priority Queue after Loop.
-                eNew = Data.List.union e (map mus paPrimeUnSatList)   			-- New E after Loop.
+                pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList      -- New Priority Queue after Loop.
+                eNew = Data.List.union e (map mus paPrimeUnSatList)   			
+										-- New E after Loop.
                 pushPQ queue p = Data.Heap.insert p queue                       -- MUS (Unsatisfiable Core - not minimal)
                 mus (PA Nothing) = error "paPrimeList had a contradicting assignment"
                 mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]))
@@ -249,12 +267,16 @@ pcePicosat n lst e eRef pq
                   |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
                   |otherwise = Just x
                 paPrimeList = map paPrime loopList                              -- The pa' list 
-                loopList = negEach $intersect lst $map (+ 1) $findIndices (==PAQuest) paE
+                loopList = negEach $intersect lst $map (+ 1) $Prelude.filter (>index) $findIndices (==PAQuest) paE
                                                                                 -- The literal set for the loop.
                 negEach xs = foldr negate [] xs
                 negate x y = x: -x : y
                 paPrime l = paMeet pa (assign n l)                              -- pa' evaluation  
                 paE = fromJust $ unPA $ gfpUP n e pa                            -- partial assignment returned from UP(E)(pa)
-                pa = fromJust(viewHead pq)                                      -- pa <- PQ.pop()
+		index								-- Should not assign variables before this
+		  | (zlst == []) = -1						-- because otherwise there will be several 
+		  | otherwise = last zlst					-- repetitions
+		zlst = findIndices (/= PAQuest) $fromJust $unPA pa
+                pa = fromJust (viewHead pq)        				-- pa <- PQ.pop()
 
 ------------------------------------------------------------------------------------------------------------
