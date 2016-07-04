@@ -141,6 +141,7 @@ up n c (PA (Just p))
 			paFalseCount = length (Prelude.filter (==PAFalse) paValueListOfC)
 			paValueListOfC = map (assignPAValueToL . fromIntegral) c
 			assignPAValueToL l
+				| (l > n || l < -n) = error "Literal value crossed n"
 				| (l > 0) = p !! (l-1)
 				| (l == 0) = error "[up:] Literal Value cannot be '0'"
 				| otherwise = invertPAValue (p !! (abs(l)-1))
@@ -278,5 +279,34 @@ pcePicosat n lst e eRef pq
 		  | otherwise = last zlst					-- repetitions
 		zlst = findIndices (/= PAQuest) $fromJust $unPA pa
                 pa = fromJust (viewHead pq)        				-- pa <- PQ.pop()
+
+------------------------------------------------------------------------------------------------------------
+
+-- pceCheck Function checks whether any encoding is actually Propagation Complete by using author's encoding as correct (PC).
+-- The function takes the value 'n' and 2 encodings as input and outputs True or False as desired.
+
+pceCheck :: Int -> [[Int]] -> [[Int]] -> Bool
+pceCheck _ [] _     = True
+pceCheck n (c:cs) e
+	| cond = pceCheck n cs e
+	| otherwise = False
+	where 	cond = checkClause n c e
+	      	checkClause _ [] e = True
+		checkClause n c e  = length(Prelude.filter (==True) $zipWith (==) oldPAList newPAList) == 0
+		newPAList = map (fromJust . unPA . (gfpUP n e)) (map makePA oldPAList)
+		oldPAList = map markLitQuest c
+		markLitQuest x	   = map (matchLit x) [1..n]
+		matchLit x l
+			| (abs(x) == l) = PAQuest
+			| (index l == Nothing)= PAQuest
+			| (c!!(fromJust(index l)) > 0)  = PAFalse
+			| (c!!(fromJust(index l)) < 0)  = PATrue
+			| otherwise = error "Error, 0 appeared"
+		index l = getOrIndex (findIndex (==l) c) (findIndex (==(-l)) c)
+		getOrIndex Nothing Nothing   = Nothing
+		getOrIndex Nothing (Just a)  = Just a
+		getOrIndex (Just a) Nothing  = Just a
+		getOrIndex (Just a) (Just b) = error "Error,Literal found in both negated and abs form"
+		makePA x = PA (Just x)
 
 ------------------------------------------------------------------------------------------------------------

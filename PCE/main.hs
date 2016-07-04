@@ -3,6 +3,7 @@ import AI.Surely
 import PCE
 import Data.List.Split
 import Data.Heap
+import Data.List
 
 readInt :: IO [Int]
 readInt = fmap (Prelude.map read. Prelude.words) getLine
@@ -11,7 +12,7 @@ readPAValue :: IO [PAValue]
 readPAValue = fmap (Prelude.map read. Prelude.words) getLine
 
 main = do
-	putStrLn "Enter \n1: Debug paTop\n2: Debug assign\n3: Debug paMeet\n4: Debug up(Unit Propagation)\n5: Debug gfpUP"
+	putStrLn "Enter \n1: Debug paTop\n2: Debug assign\n3: Debug paMeet\n4: Debug up(Unit Propagation)\n5: Debug gfpUP\n6: Check Completeness by providing author's encoding"
 	putStrLn "ANY OTHER NUMBER: PCE"
 	debugInput <- getLine
 	let debug = read debugInput :: Int
@@ -50,6 +51,20 @@ main = do
 			putStrLn "Enter a partial assignment ('n' Space seperated PAValues)"     
                         p <- readPAValue
 			print $ gfpUP n setC (PA (Just p))
+	else if debug == 6
+		then do
+			putStrLn "*** Check Completeness ***"
+			putStrLn "Enter Author's Encoding (Each clause is space seperated) the clauses are seperated by ','"
+                	inputE <- getLine
+                	let tmp1 = splitOneOf "," inputE
+                	let e = (Prelude.map ((map read).words) tmp1)
+                	let eCall = if e == [[]] then [] else e
+                	putStrLn "Enter your encoding (Each clause is space seperated) the clauses are seperated by ','"
+                	inputERef <- getLine
+                	let tmp2 = splitOneOf "," inputERef
+                	let eRef = (Prelude.map ((map read).words) tmp2)
+			print $ pceCheck n eCall eRef
+			
 	else do
 		putStrLn "*** Computing Propagation Complete Encodings (PCE) ***"
 		putStrLn "Enter the variables of interest (list of integers)"
