@@ -33,6 +33,11 @@ isSolution :: Solution -> Bool
 isSolution Unsatisfiable = False
 isSolution (Solution _)  = True
 
+--makePA Function
+
+makePA :: [PAValue] -> PA
+makePA x = PA $Just x
+
 -- Print Function for debugging
 -- To debug any variable just call $unsafePerformIO $debugPrint <variable>
 
@@ -62,6 +67,21 @@ newtype PA = PA (Maybe([PAValue]))
 unPA :: PA -> Maybe([PAValue])
 unPA (PA v) = v
 
+-- lessThanPA Function 
+
+lessThanPA :: PA -> PA -> Bool
+lessThanPA (PA Nothing)  _ 		= False
+lessThanPA (PA (Just p)) (PA Nothing) 	= True
+lessThanPA (PA (Just p)) (PA (Just q))	= ((length $Prelude.filter (==False) $zipWith isLessThan p q) == 0)
+
+-- isLessThan Function
+
+isLessThan :: PAValue -> PAValue -> Bool
+isLessThan PAQuest PAQuest = True
+isLessThan PAQuest _ 	   = False
+isLessThan _ PAQuest 	   = True
+isLessThan p q	     	   = if (p==q) then True else False
+
 -- The following defines an order on Partial Assignments (The more undefined, higher the value)
 -- The order should be more defined than just count of PAQuest, refer definition 
 
@@ -70,18 +90,16 @@ instance Ord PA where
   (PA Nothing) `compare` _ = LT
   PA (Just p) `compare` PA (Just q)
 	| (z /= EQ) = z
-	| (lx /= EQ) = lx
-	| (rx /= EQ) = rx
-	| otherwise = ry
+	| otherwise = zOrd
 	where 	z = length(Prelude.filter (== PAQuest) p) `compare` length(Prelude.filter (== PAQuest) q)
 	      	px = findIndices (== PATrue) p
 		qx = findIndices (== PATrue) q
-		py = findIndices (== PAFalse) p
-		qy = findIndices (== PAFalse) q
-		lx = length(px) `compare` length(qx)
-		ly = length(py) `compare` length(qy)
-		rx = qx `compare` px
-		ry = qy `compare` py
+		py = map (+ lth) $findIndices (== PAFalse) p
+		qy = map (+ lth) $findIndices (== PAFalse) q
+		pz = Data.List.union px py
+		qz = Data.List.union qx qy
+		lth = length p
+		zOrd = qz `compare` pz
 ------------------------------------------------------------------------------------------------------------
 
 -- paTop is the fully unidentified partial assignment.
@@ -166,6 +184,15 @@ gfpUP n setC p = greatestFP p
 
 ------------------------------------------------------------------------------------------------------------
 
+-- Though named as mus, all this function does is to convert PA' List to the correspoding encoding.
+
+
+mus :: Int -> PA -> [Int]
+mus _ (PA Nothing) = error "paPrimeList had a contradicting assignment"
+mus n (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]))
+
+------------------------------------------------------------------------------------------------------------
+
 -- pceAISurely is the function that will function as our Algorithm-1 (this function uses a not so good SAT Solver)
 -- PCE - stands for Propagation Complete Encodings
 
@@ -191,10 +218,8 @@ pceAISurely n lst e eRef pq
 	  where pqNewCompact = foldl' queueAdd empty $toList pqNew		-- PQ.Compact() implemented
 		queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
 		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList	-- New Priority Queue after Loop.
-		eNew = Data.List.union e (map mus paPrimeUnSatList)		-- New E after Loop.
-		pushPQ queue p = Data.Heap.insert p queue			-- MUS (Unsatisfiable Core - not minimal)
-		mus (PA Nothing) = error "paPrimeList had a contradicting assignment"	
-		mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]))
+		eNew = Data.List.union e (map (mus n) paPrimeUnSatList)		-- New E after Loop.
+		pushPQ queue p = Data.Heap.insert p queue			
 		(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
 		isSat p =  isJust $ AI.Surely.solve $sequence $Data.List.nub (map (applyPA p) eRef)
 		applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
@@ -243,15 +268,11 @@ pceAISurely n lst e eRef pq
 pcePicosat :: Int -> [Int] -> [[Int]] -> [[Int]] -> MaxHeap PA -> [[Int]]
 pcePicosat n lst e eRef pq
         | (isEmpty pq) = e
-        | otherwise = pcePicosat n lst eNew eRef pqNew				-- PQ.compact() not used yet
-          where pqNewCompact = foldl' queueAdd empty $toList pqNew              -- PQ.Compact() implemented
-                queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
-                pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList      -- New Priority Queue after Loop.
-                eNew = Data.List.union e (map mus paPrimeUnSatList)   			
-										-- New E after Loop.
-                pushPQ queue p = Data.Heap.insert p queue                       -- MUS (Unsatisfiable Core - not minimal)
-                mus (PA Nothing) = error "paPrimeList had a contradicting assignment"
-                mus (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]))
+        | otherwise = pcePicosat n lst eNew eRef pqNew				-- PQ.compact() not implemented yet
+          where pqNew = fromList $foldl' pushPQ queueList paPrimeSatList    	-- New Priority Queue after Loop.
+		eNew = Data.List.union e $map (mus n) paPrimeUnSatList		-- New E after Loop.
+                pushPQ queue p = Data.List.union queue [p]
+		queueList = toList (Data.Heap.drop 1 pq)
                 (paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
                 isSat p =  isSolution $unsafePerformIO $ Picosat.solve 
 					(if (solverQuery p) == Nothing then [[-1],[1]] else fromJust $solverQuery p)
@@ -267,13 +288,14 @@ pcePicosat n lst e eRef pq
                 isTrue x
                   |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
                   |otherwise = Just x
-                paPrimeList = map paPrime loopList                              -- The pa' list 
-                loopList = negEach $intersect lst $map (+ 1) $Prelude.filter (>index) $findIndices (==PAQuest) paE
+                paPrimeList = map paPrime loopList				-- The pa' list 
+                loopList = negEach $intersect lst $map (+ 1) $findIndices (==PAQuest) paE
                                                                                 -- The literal set for the loop.
                 negEach xs = foldr negate [] xs
                 negate x y = x: -x : y
                 paPrime l = paMeet pa (assign n l)                              -- pa' evaluation  
-                paE = fromJust $ unPA $ gfpUP n e pa                            -- partial assignment returned from UP(E)(pa)
+										-- Indices which get fixed already
+                paE = fromJust $ unPA $ gfpUP n e pa     			-- partial assignment returned from UP(E)(pa)
 		index								-- Should not assign variables before this
 		  | (zlst == []) = -1						-- because otherwise there will be several 
 		  | otherwise = last zlst					-- repetitions
@@ -290,9 +312,9 @@ pceCheck _ [] _     = True
 pceCheck n (c:cs) e
 	| cond = pceCheck n cs e
 	| otherwise = False
-	where 	cond = checkClause n c e
+	where 	cond = checkClause n (unsafePerformIO $debugPrint c) e
 	      	checkClause _ [] e = True
-		checkClause n c e  = length(Prelude.filter (==True) $zipWith (==) oldPAList newPAList) == 0
+		checkClause n c e  = length(Prelude.filter (==True) $unsafePerformIO $debugPrint $zipWith (==) oldPAList newPAList) == 0
 		newPAList = map (fromJust . unPA . (gfpUP n e)) (map makePA oldPAList)
 		oldPAList = map markLitQuest c
 		markLitQuest x	   = map (matchLit x) [1..n]
@@ -307,6 +329,5 @@ pceCheck n (c:cs) e
 		getOrIndex Nothing (Just a)  = Just a
 		getOrIndex (Just a) Nothing  = Just a
 		getOrIndex (Just a) (Just b) = error "Error,Literal found in both negated and abs form"
-		makePA x = PA (Just x)
 
 ------------------------------------------------------------------------------------------------------------
