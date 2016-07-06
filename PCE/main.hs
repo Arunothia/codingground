@@ -3,6 +3,7 @@ import AI.Surely
 import PCE
 import Data.List.Split
 import Data.Heap
+import Data.Set
 import Data.List
 
 readInt :: IO [Int]
@@ -47,7 +48,7 @@ main = do
 			putStrLn "Enter Set of Clauses (Each clause is space seperated literals) and the clauses are seperated by ','"
 			inputSet <- getLine
     			let tmp = splitOneOf "," inputSet
-    			let setC = (Prelude.map ((map read).words) tmp)
+    			let setC = (Prelude.map ((Prelude.map read).words) tmp)
 			putStrLn "Enter a partial assignment ('n' Space seperated PAValues)"     
                         p <- readPAValue
 			print $ gfpUP n setC (PA (Just p))
@@ -57,12 +58,12 @@ main = do
 			putStrLn "Enter Author's Encoding (Each clause is space seperated) the clauses are seperated by ','"
                 	inputE <- getLine
                 	let tmp1 = splitOneOf "," inputE
-                	let e = (Prelude.map ((map read).words) tmp1)
+                	let e = (Prelude.map ((Prelude.map read).words) tmp1)
                 	let eCall = if e == [[]] then [] else e
                 	putStrLn "Enter your encoding (Each clause is space seperated) the clauses are seperated by ','"
                 	inputERef <- getLine
                 	let tmp2 = splitOneOf "," inputERef
-                	let eRef = (Prelude.map ((map read).words) tmp2)
+                	let eRef = (Prelude.map ((Prelude.map read).words) tmp2)
 			print $ pceCheck n eCall eRef
 			
 	else do
@@ -72,13 +73,13 @@ main = do
 		putStrLn "Enter E_0 (Each clause is space seperated literals) and the clauses are seperated by ','"
                 inputE <- getLine
                 let tmp1 = splitOneOf "," inputE
-                let e = (Prelude.map ((map read).words) tmp1)
+                let e = (Prelude.map ((Prelude.map read).words) tmp1)
 		let eCall = if e == [[]] then [] else e
 		putStrLn "Enter E_ref (Each clause is space seperated literals) and the clauses are seperated by ','"
                 inputERef <- getLine
                 let tmp2 = splitOneOf "," inputERef
-                let eRef = (Prelude.map ((map read).words) tmp2)
-		let pq = singleton (paTop n) :: MaxHeap PA
+                let eRef = (Prelude.map ((Prelude.map read).words) tmp2)
+		let pq = Data.Set.singleton (paTop n) 
 		let answer = pcePicosat n lst eCall eRef pq
 		_  <- print answer
 		print $length answer

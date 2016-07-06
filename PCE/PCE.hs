@@ -6,6 +6,7 @@ module PCE where
 import AI.Surely 
 import Picosat
 -- For Priority Queue 
+import Data.Set
 import Data.Heap 
 -- For find Function for List manipulation
 import Data.List
@@ -94,8 +95,8 @@ instance Ord PA where
 	where 	z = length(Prelude.filter (== PAQuest) p) `compare` length(Prelude.filter (== PAQuest) q)
 	      	px = findIndices (== PATrue) p
 		qx = findIndices (== PATrue) q
-		py = map (+ lth) $findIndices (== PAFalse) p
-		qy = map (+ lth) $findIndices (== PAFalse) q
+		py = Data.List.map (+ lth) $findIndices (== PAFalse) p
+		qy = Data.List.map (+ lth) $findIndices (== PAFalse) q
 		pz = Data.List.union px py
 		qz = Data.List.union qx qy
 		lth = length p
@@ -157,7 +158,7 @@ up n c (PA (Just p))
 	| otherwise 					       = (PA (Just p))
 		where	paQuestCount = length (Prelude.filter (==PAQuest) paValueListOfC)
 			paFalseCount = length (Prelude.filter (==PAFalse) paValueListOfC)
-			paValueListOfC = map (assignPAValueToL . fromIntegral) c
+			paValueListOfC = Data.List.map (assignPAValueToL . fromIntegral) c
 			assignPAValueToL l
 				| (l > n || l < -n) = error "Literal value crossed n"
 				| (l > 0) = p !! (l-1)
@@ -189,7 +190,7 @@ gfpUP n setC p = greatestFP p
 
 mus :: Int -> PA -> [Int]
 mus _ (PA Nothing) = error "paPrimeList had a contradicting assignment"
-mus n (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (-1)) [1..n]))
+mus n (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (Data.List.map paValue p) (Data.List.map (* (-1)) [1..n]))
 
 ------------------------------------------------------------------------------------------------------------
 
@@ -214,17 +215,15 @@ mus n (PA (Just p))= Prelude.filter (/=0) (zipWith (*) (map paValue p) (map (* (
 pceAISurely :: Int -> [Int] -> [[Int]] -> [[Int]] -> MaxHeap PA -> [[Int]]
 pceAISurely n lst e eRef pq
 	| (isEmpty pq) = e
-	| otherwise = pceAISurely n lst eNew eRef pqNew				-- PQ.compact() not used yet	
-	  where pqNewCompact = foldl' queueAdd empty $toList pqNew		-- PQ.Compact() implemented
-		queueAdd q pa = Data.Heap.union (singleton (gfpUP n eNew pa) :: MaxHeap PA) q
-		pqNew = foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList	-- New Priority Queue after Loop.
-		eNew = Data.List.union e (map (mus n) paPrimeUnSatList)		-- New E after Loop.
+	| otherwise = pceAISurely n lst eNew eRef pqNew						-- PQ.compact() not used yet	
+	  where pqNew = Data.List.foldl' pushPQ (Data.Heap.drop 1 pq) paPrimeSatList		-- New Priority Queue after Loop.
+		eNew = Data.List.union e (Data.List.map (mus n) paPrimeUnSatList)		-- New E after Loop.
 		pushPQ queue p = Data.Heap.insert p queue			
 		(paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
-		isSat p =  isJust $ AI.Surely.solve $sequence $Data.List.nub (map (applyPA p) eRef)
+		isSat p =  isJust $ AI.Surely.solve $sequence $Data.List.nub (Data.List.map (applyPA p) eRef)
 		applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
 		applyPA _ [] = Just [-1,1]
-		applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map (f p) c)
+		applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $Data.List.map (f p) c)
 		f p l
 		  |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else l)
 		  |(l == 0) = error "Literal Value cannot be '0'"
@@ -233,10 +232,10 @@ pceAISurely n lst e eRef pq
 		isTrue x
 		  |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
 		  |otherwise = Just x
-		paPrimeList = map paPrime loopList 				-- The pa' list 
-		loopList = negEach $intersect lst $map (+ 1) $Prelude.filter (>index) $findIndices (==PAQuest) paE
+		paPrimeList = Data.List.map paPrime loopList 				-- The pa' list 
+		loopList = negEach $intersect lst $Data.List.map (+ 1) $Prelude.filter (>index) $findIndices (==PAQuest) paE
                                                                                 -- The literal set for the loop.
-                negEach xs = foldr negate [] xs
+                negEach xs = Data.List.foldr negate [] xs
                 negate x y = x: -x : y
                 paPrime l = paMeet pa (assign n l)                              -- pa' evaluation  
                 paE = fromJust $ unPA $ gfpUP n e pa                            -- partial assignment returned from UP(E)(pa)
@@ -254,7 +253,7 @@ pceAISurely n lst e eRef pq
 -- (1) An integer 'n', implying the vocabulary or variable set is X_1 to X_n
 -- (2) A list of list of integers that will represent the CNF of E that is being computed (It will be E_0 at the start)
 -- (3) A list of list of integers that will represent the CNF of E_ref (which is the CNF for which equisatisfiable formula is to be found)
--- (4) A maxHeap (priority queue) that is required by the algorithm for looping.
+-- (4) A [PA] (priority queue) that is required by the algorithm for looping.
 
 -- It returns 
 -- (1) List of list of Ints representing the encoding that is equisatisfiable to E_ref and is propagation complete.
@@ -265,21 +264,21 @@ pceAISurely n lst e eRef pq
 -- (3) Postive Int i represents the literal X_i and negative integer i represents the literal !X_i. 
 -- (4) Int 0 is not included in the representation.
 
-pcePicosat :: Int -> [Int] -> [[Int]] -> [[Int]] -> MaxHeap PA -> [[Int]]
+pcePicosat :: Int -> [Int] -> [[Int]] -> [[Int]] -> Set PA -> [[Int]]
 pcePicosat n lst e eRef pq
-        | (isEmpty pq) = e
-        | otherwise = pcePicosat n lst eNew eRef pqNew				-- PQ.compact() not implemented yet
-          where pqNew = fromList $foldl' pushPQ queueList paPrimeSatList    	-- New Priority Queue after Loop.
-		eNew = Data.List.union e $map (mus n) paPrimeUnSatList		-- New E after Loop.
-                pushPQ queue p = Data.List.union queue [p]
-		queueList = toList (Data.Heap.drop 1 pq)
+	| (Data.Set.null pq)		= e
+	| otherwise			= pcePicosat n lst eNew eRef pqNew              -- PQ.compact() not implemented yet
+          where pqNew = Data.List.foldl' pushPQ queueList paPrimeSatList    		-- New Priority Queue after Loop.
+		eNew = Data.List.union e $Data.List.map (mus n) paPrimeUnSatList	-- New E after Loop.
+                pushPQ queue p = Data.Set.insert (gfpUP n eNew p) queue
+		queueList = deleteMax pq
                 (paPrimeSatList, paPrimeUnSatList) = Data.List.partition isSat paPrimeList
                 isSat p =  isSolution $unsafePerformIO $ Picosat.solve 
 					(if (solverQuery p) == Nothing then [[-1],[1]] else fromJust $solverQuery p)
-		solverQuery p = sequence $Data.List.nub (map (applyPA p) eRef)
+		solverQuery p = sequence $Data.List.nub (Data.List.map (applyPA p) eRef)
                 applyPA (PA Nothing) _  = error "paPrimeList had a contradicting assignment"
                 applyPA _ [] = Just [-1,1]
-                applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $map (f p) c)
+                applyPA (PA (Just p)) c = isTrue (Prelude.filter (/=0) $Data.List.map (f p) c)
                 f p l
                   |(l > 0) = if (p!!(l-1)) == PATrue then (n+1) else (if (p!!(l-1)) == PAFalse then 0 else l)
                   |(l == 0) = error "Literal Value cannot be '0'"
@@ -288,19 +287,14 @@ pcePicosat n lst e eRef pq
                 isTrue x
                   |length(Prelude.filter (==(n+1)) x) > 0 = Just [1,-1]
                   |otherwise = Just x
-                paPrimeList = map paPrime loopList				-- The pa' list 
-                loopList = negEach $intersect lst $map (+ 1) $findIndices (==PAQuest) paE
+                paPrimeList = Data.List.map paPrime loopList			-- The pa' list 
+                loopList = negEach $intersect lst $Data.List.map (+ 1) $findIndices (==PAQuest) paE
                                                                                 -- The literal set for the loop.
-                negEach xs = foldr negate [] xs
+                negEach xs = Data.List.foldr negate [] xs
                 negate x y = x: -x : y
                 paPrime l = paMeet pa (assign n l)                              -- pa' evaluation  
-										-- Indices which get fixed already
-                paE = fromJust $ unPA $ gfpUP n e pa     			-- partial assignment returned from UP(E)(pa)
-		index								-- Should not assign variables before this
-		  | (zlst == []) = -1						-- because otherwise there will be several 
-		  | otherwise = last zlst					-- repetitions
-		zlst = findIndices (/= PAQuest) $fromJust $unPA pa
-                pa = fromJust (viewHead pq)        				-- pa <- PQ.pop()
+                paE = fromJust $ unPA $gfpUP n e pa     			-- partial assignment returned from UP(E)(pa)
+                pa = findMax pq        						-- pa <- PQ.pop()
 
 ------------------------------------------------------------------------------------------------------------
 
@@ -312,12 +306,16 @@ pceCheck _ [] _     = True
 pceCheck n (c:cs) e
 	| cond = pceCheck n cs e
 	| otherwise = False
-	where 	cond = checkClause n (unsafePerformIO $debugPrint c) e
-	      	checkClause _ [] e = True
-		checkClause n c e  = length(Prelude.filter (==True) $unsafePerformIO $debugPrint $zipWith (==) oldPAList newPAList) == 0
-		newPAList = map (fromJust . unPA . (gfpUP n e)) (map makePA oldPAList)
-		oldPAList = map markLitQuest c
-		markLitQuest x	   = map (matchLit x) [1..n]
+	where 	cond = checkClause n e c
+
+-- checkClause Function is a helper function for pceCheck
+
+checkClause :: Int -> [[Int]] -> [Int] -> Bool
+checkClause _ e [] = True
+checkClause n e c  = length(Prelude.filter (==True) $zipWith (==) oldPAList newPAList) == 0
+	where 	newPAList = Data.List.map (fromJust . unPA . (gfpUP n e)) (Data.List.map makePA oldPAList)
+		oldPAList = Data.List.map markLitQuest c
+		markLitQuest x	   = Data.List.map (matchLit x) [1..n]
 		matchLit x l
 			| (abs(x) == l) = PAQuest
 			| (index l == Nothing)= PAQuest
@@ -329,5 +327,4 @@ pceCheck n (c:cs) e
 		getOrIndex Nothing (Just a)  = Just a
 		getOrIndex (Just a) Nothing  = Just a
 		getOrIndex (Just a) (Just b) = error "Error,Literal found in both negated and abs form"
-
 ------------------------------------------------------------------------------------------------------------

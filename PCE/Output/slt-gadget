@@ -4,6 +4,7 @@ Enter
 3: Debug paMeet
 4: Debug up(Unit Propagation)
 5: Debug gfpUP
+6: Check Completeness by providing author's encoding
 ANY OTHER NUMBER: PCE
 Enter value of Vocabulary 'n' (Int n > 0)
 *** Computing Propagation Complete Encodings (PCE) ***
