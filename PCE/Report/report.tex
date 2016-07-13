@@ -57,6 +57,7 @@ In our implementation, we represent a CNF encoding as a list of list of integers
 We assume the input to be a CNF encoding. The input arguments are 
 \begin{itemize}
 \item An integer 'n', implying the vocabulary or variable set is $X_1$ to $X_n$
+\item A list of integers denoting the variables of interest.
 \item A list of list of integers that will represent the CNF of E that is being computed (It will be $E_0$ at the start)
 \item A list of list of integers that will represent the CNF of $E_{ref}$ (which is the CNF for which equi-satisfiable formula is to be found)
 \item A minHeap (priority queue) that is required by the algorithm for looping. It is not a user input argument. It should by default be a singleton queue with the fully undefined partial assignment.
@@ -67,7 +68,17 @@ The output is
 \item List of list of Integers representing the encoding that is equi-satisfiable to $E_{ref}$ and is propagation complete.
 \end{itemize}
 \subsection{Methodology in Haskell}
-PAValue is the defined Data Type that can either be PATrue, PAFalse or PAQuest representing the values True, False or Question that a partial assignment can assign to a variable. We define Partial Assignments as Maybe[PAValue], where Nothing represents the contradicting partial assignment or the bottom. The ordering amongst Partial Assignments are established as - Nothing at the least and more undefined the partial assignment is, higher it is in the ordering. For the implementation of Priority Queues, we use Haskell Package Data.Heap. From the ordering of Partial Assignments mentioned, it is clear that we used maxHeap to mimic the priority queue desired. Sat Solver for the implementation has been taken from ~\cite{sat.hs}.
+PAValue is the defined Data Type that can either be PATrue, PAFalse or PAQuest representing the values True, False or Question that a partial assignment can assign to a variable. We define Partial Assignments as Maybe[PAValue], where Nothing represents the contradicting partial assignment or the bottom. The ordering amongst Partial Assignments are established as 
+\begin{itemize}
+\item Nothing - the lowest bottom.
+\item The more undefined the partial assignment is the higher it is in the ordering.
+\item Partial assignments with same number of undefined variables are hard coded to follow a certain order of sorting \label{ordering}.
+\end{itemize} 
+We implemented it in two ways
+\begin{itemize}
+\item For the implementation of Priority Queues, we use Haskell Package Data.Heap. From the ordering of Partial Assignments mentioned, it is clear that we used maxHeap to mimic the priority queue desired. Sat Solver for the implementation has been taken from ~\cite{sat.hs}. This method turned out to be very slow as it was unable to give output for large test cases.
+\item For the implementation of Priority Queues, we use Haskell Package Data.Set. Sat Solver for the implementation was the Haskell Package Picosat. This method was reasonable in its speed and all the results presented in the result section are using this method.
+\end{itemize} 
 
 \section{Examples}
 \subsection{If-then-Else Gadget}
@@ -123,6 +134,41 @@ The additional $2$ clauses being
 \begin{center}
 $((x \wedge y) \longrightarrow b_{in}) \wedge ((\neg x \wedge \neg y) \longrightarrow b_{in})$
 \end{center}
+\section{Results}
+\begin{tabular}{ |p{4cm}||p{5cm}|p{5cm}|  }
+ \hline
+ \multicolumn{3}{|c|}{Propagation Complete Encodings in Haskell} \\
+ \hline
+ Gadget Name& No. of Clauses in the PCE (as reported in ~\cite{PCE}) & No. of Clauses in the PCE (our implementation) \\
+ \hline
+ult-gadget& 6 & 6 \\
+slt-gadget& 6 & 6 \\
+full-add& 14 & 14 \\
+bc3to2& 76 & 78 \\
+bc7to3& 254 & 254 \\
+mult2& 19 & 33 \\
+mult-const3 & 20 & 22 \\
+mult-const5 & 24 & 43 \\
+mult-const7 & 32 & 58 \\
+ult-6bit & 158 & 158 \\
+add-3bit & 96 & 96 \\
+add-4bit & 336 & 336 \\
+bc3to2-3bit & 1536 & 1584 \\
+mult-4bit & 670 & 761 \\
+ \hline
+\end{tabular}
+
+\section{Conclusion}
+\begin{itemize}
+\item The additional clauses in the complete encodings produced from our implementation is because we haven't removed the following redundancy -
+\begin{center}
+$x \longrightarrow y$ and $y \longrightarrow z$ \\
+then $x \longrightarrow z$ is redundant. 
+\end{center}
+\item Because of this redundancy, the results of our implementation depends largely on the order in which the Partial assignments are being processed. \ref{ordering}
+\item The largest of the test cases takes over 10 minutes to give its output which is not as efficient as the C++ implementation reported in ~\cite{PCE}, but is good enough for a functional programming language like Haskell. 
+\item A lot of functions could be improved to become much more efficient in our implementation.
+\end{itemize}
 \nocite{*}
 \bibliographystyle{unsrt}
 \bibliography{ref}
