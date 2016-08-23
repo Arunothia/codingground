@@ -5,6 +5,7 @@ import Data.List.Split
 import Data.Heap
 import Data.Set
 import Data.List
+import System.CPUTime
 
 readInt :: IO [Int]
 readInt = fmap (Prelude.map read. Prelude.words) getLine
@@ -81,5 +82,12 @@ main = do
                 let eRef = (Prelude.map ((Prelude.map read).words) tmp2)
 		let pq = Data.Set.singleton (paTop n) 
 		let answer = pcePicosat n lst eCall eRef pq
+		tIni <- getCPUTime
+		_ <- print tIni
 		_  <- print answer
-		print $length answer
+		let ans = redundancyRemover answer
+		_ <- print ans
+		tFin <- getCPUTime
+		_ <- print tFin
+		_ <- print ((length answer), (length ans))
+		print ((tFin - tIni) `div` 1000000000000)

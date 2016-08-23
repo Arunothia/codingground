@@ -298,6 +298,28 @@ pcePicosat n lst e eRef pq
 
 ------------------------------------------------------------------------------------------------------------
 
+-- redundancyRemover Function removes the redundant clauses from the given encoding.
+-- Note that, this function guarentees only a minimal encoding as the output and not the absolute least (as the outcome will depend on the processing order).
+-- It takes an encoding and returns the encoding after removing redundant clauses, if any.
+
+redundancyRemover :: [[Int]] -> [[Int]]
+redundancyRemover e = redundancyRemoverHelper 0 (length e) n e
+        where   n    = maximum (Data.List.map maximum eAbs)
+                eAbs = Data.List.map (Data.List.map abs) e
+
+redundancyRemoverHelper :: Int -> Int -> Int -> [[Int]] -> [[Int]]
+redundancyRemoverHelper _ _ _ [] = []
+redundancyRemoverHelper l m n e
+        | (l<m)     = if ch then x else y
+        | otherwise = e
+                where   ch   = checkClause n rest c
+                        x    = redundancyRemoverHelper l (m-1) n rest
+                        y    = redundancyRemoverHelper (l+1) m n e
+                        c    = e!!l
+                        rest = Prelude.filter (/= c) e
+
+------------------------------------------------------------------------------------------------------------
+
 -- pceCheck Function checks whether any encoding is actually Propagation Complete by using author's encoding as correct (PC).
 -- The function takes the value 'n' and 2 encodings as input and outputs True or False as desired.
 
